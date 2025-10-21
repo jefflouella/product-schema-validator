@@ -13,7 +13,7 @@ def main():
         from schema_validator.config import Config
         
         print("=" * 60)
-        print("Schema Validator - Web Interface")
+        print("Product Schema Validator - Web Interface")
         print("=" * 60)
         print(f"Starting server on http://{Config.HOST}:{Config.PORT}")
         print("Press CTRL+C to stop")
