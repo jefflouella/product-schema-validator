@@ -23,14 +23,14 @@ def index():
     db = get_db()
     projects = db.get_projects()
     
+    # If no projects exist, show home page
+    if not projects:
+        return render_template('home.html')
+    
     # Get URL count per project
     for project in projects:
         urls = db.get_urls(project_id=project['id'], status='active')
         project['url_count'] = len(urls)
-    
-    # If no projects exist, show home page
-    if not projects:
-        return render_template('home.html')
     
     # If projects exist, show projects overview
     return render_template('projects.html', projects=projects)

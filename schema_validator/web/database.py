@@ -98,9 +98,7 @@ class Database:
         conn.commit()
         conn.close()
         
-        # Create default project if none exist
-        if not self.get_projects():
-            self.create_project("Default Project", "Default project for organizing URLs")
+        # Don't create default project - let users start fresh
     
     # Project operations
     def create_project(self, name: str, description: str = "", settings: Dict = None) -> int:
@@ -169,7 +167,16 @@ class Database:
         """Delete project and all associated data."""
         conn = self.get_connection()
         cursor = conn.cursor()
+        
+        # First delete all URLs for this project
+        cursor.execute('DELETE FROM urls WHERE project_id = ?', (project_id,))
+        
+        # Delete all validation runs for this project (this will cascade to results)
+        cursor.execute('DELETE FROM validation_runs WHERE project_id = ?', (project_id,))
+        
+        # Finally delete the project
         cursor.execute('DELETE FROM projects WHERE id = ?', (project_id,))
+        
         conn.commit()
         conn.close()
     
