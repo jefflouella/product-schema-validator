@@ -150,6 +150,34 @@ def api_create_project():
     return jsonify({'id': project_id, 'message': 'Project created successfully'})
 
 
+@bp.route('/api/projects/<int:project_id>/settings', methods=['GET'])
+def api_get_project_settings(project_id):
+    """Get project settings."""
+    db = get_db()
+    project = db.get_project(project_id)
+    
+    if not project:
+        return jsonify({'error': 'Project not found'}), 404
+    
+    settings = json.loads(project.get('settings_json', '{}'))
+    
+    return jsonify({
+        'name': project['name'],
+        'description': project.get('description', ''),
+        'default_speed': settings.get('default_speed', 'balanced'),
+        'concurrent_limit': settings.get('concurrent_limit', 3),
+        'timeout': settings.get('timeout', 30),
+        'delay_min': settings.get('delay_min', 2),
+        'delay_max': settings.get('delay_max', 5),
+        'max_retries': settings.get('max_retries', 2),
+        'headless': settings.get('headless', True),
+        'user_agent': settings.get('user_agent', 'chrome'),
+        'custom_user_agent': settings.get('custom_user_agent', ''),
+        'stealth_mode': settings.get('stealth_mode', True),
+        'block_resources': settings.get('block_resources', True)
+    })
+
+
 @bp.route('/api/projects/<int:project_id>', methods=['PUT'])
 def api_update_project(project_id):
     """Update a project."""

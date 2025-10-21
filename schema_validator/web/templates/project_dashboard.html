@@ -263,19 +263,122 @@
                         <h6>Default Validation Settings</h6>
                         <div class="mb-3">
                             <label class="form-label">Validation Speed</label>
-                            <select class="form-select" x-model="projectSettings.default_speed">
-                                <option value="conservative">Conservative</option>
-                                <option value="balanced">Balanced</option>
-                                <option value="aggressive">Aggressive</option>
+                            <select class="form-select" x-model="projectSettings.default_speed" @change="updateSpeedPreset()">
+                                <option value="conservative">Conservative - For sites with strict anti-bot protection (1 browser, 5-10s delays, 45s timeout)</option>
+                                <option value="balanced">Balanced - Recommended for most sites (3 browsers, 2-5s delays, 30s timeout)</option>
+                                <option value="aggressive">Aggressive - For your own websites (5 browsers, 1-2s delays, 20s timeout)</option>
+                                <option value="custom">Custom - Full control over all settings</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Concurrent Limit</label>
-                            <input type="number" class="form-control" x-model="projectSettings.concurrent_limit" min="1" max="10">
+                        
+                        <!-- Advanced Settings (shown when Custom is selected) -->
+                        <div x-show="projectSettings.default_speed === 'custom'" class="border rounded p-3 mb-3 bg-light">
+                            <h6 class="mb-3">Custom Validation Settings</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Concurrent Browsers</label>
+                                        <input type="number" class="form-control" x-model="projectSettings.concurrent_limit" min="1" max="20">
+                                        <small class="text-muted">Number of browsers running simultaneously</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Timeout (seconds)</label>
+                                        <input type="number" class="form-control" x-model="projectSettings.timeout" min="10" max="300">
+                                        <small class="text-muted">Maximum time to wait for page load</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Min Delay (seconds)</label>
+                                        <input type="number" class="form-control" x-model="projectSettings.delay_min" min="1" max="30">
+                                        <small class="text-muted">Minimum delay between requests</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Max Delay (seconds)</label>
+                                        <input type="number" class="form-control" x-model="projectSettings.delay_max" min="1" max="30">
+                                        <small class="text-muted">Maximum delay between requests</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Max Retries</label>
+                                        <input type="number" class="form-control" x-model="projectSettings.max_retries" min="0" max="5">
+                                        <small class="text-muted">Number of retry attempts for failed requests</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Browser Mode</label>
+                                        <select class="form-select" x-model="projectSettings.headless">
+                                            <option :value="true">Headless (Faster, less resource usage)</option>
+                                            <option :value="false">Visible (Slower, but can see browser activity)</option>
+                                        </select>
+                                        <small class="text-muted">Whether to show browser window</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">User Agent</label>
+                                        <select class="form-select" x-model="projectSettings.user_agent">
+                                            <option value="chrome">Chrome (Recommended)</option>
+                                            <option value="firefox">Firefox</option>
+                                            <option value="safari">Safari</option>
+                                            <option value="custom">Custom User Agent</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3" x-show="projectSettings.user_agent === 'custom'">
+                                        <label class="form-label">Custom User Agent</label>
+                                        <input type="text" class="form-control" x-model="projectSettings.custom_user_agent" placeholder="Mozilla/5.0...">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" x-model="projectSettings.stealth_mode" id="stealthMode">
+                                    <label class="form-check-label" for="stealthMode">
+                                        <strong>Stealth Mode</strong> - Advanced anti-detection techniques
+                                    </label>
+                                    <small class="text-muted d-block">Disables automation indicators, randomizes timing, and mimics human behavior</small>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" x-model="projectSettings.block_resources" id="blockResources">
+                                    <label class="form-check-label" for="blockResources">
+                                        <strong>Block Unnecessary Resources</strong>
+                                    </label>
+                                    <small class="text-muted d-block">Blocks images, CSS, fonts to speed up validation</small>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Timeout (seconds)</label>
-                            <input type="number" class="form-control" x-model="projectSettings.timeout" min="10" max="120">
+                        
+                        <!-- Quick Settings Summary (shown for presets) -->
+                        <div x-show="projectSettings.default_speed !== 'custom'" class="alert alert-info">
+                            <h6>Current Settings:</h6>
+                            <ul class="mb-0">
+                                <li x-text="'Concurrent Browsers: ' + (projectSettings.default_speed === 'conservative' ? '1' : projectSettings.default_speed === 'balanced' ? '3' : '5')"></li>
+                                <li x-text="'Delays: ' + (projectSettings.default_speed === 'conservative' ? '5-10 seconds' : projectSettings.default_speed === 'balanced' ? '2-5 seconds' : '1-2 seconds')"></li>
+                                <li x-text="'Timeout: ' + (projectSettings.default_speed === 'conservative' ? '45 seconds' : projectSettings.default_speed === 'balanced' ? '30 seconds' : '20 seconds')"></li>
+                            </ul>
+                            <small class="text-muted">Switch to "Custom" for full control over all settings.</small>
                         </div>
                     </div>
                 </div>
@@ -320,7 +423,44 @@ function projectDashboardApp() {
             description: '{{ project.description or "" }}',
             default_speed: 'balanced',
             concurrent_limit: 3,
-            timeout: 30
+            timeout: 30,
+            delay_min: 2,
+            delay_max: 5,
+            max_retries: 2,
+            headless: true,
+            user_agent: 'chrome',
+            custom_user_agent: '',
+            stealth_mode: true,
+            block_resources: true
+        },
+        
+        updateSpeedPreset() {
+            if (this.projectSettings.default_speed === 'conservative') {
+                this.projectSettings.concurrent_limit = 1;
+                this.projectSettings.timeout = 45;
+                this.projectSettings.delay_min = 5;
+                this.projectSettings.delay_max = 10;
+                this.projectSettings.max_retries = 3;
+                this.projectSettings.stealth_mode = true;
+                this.projectSettings.block_resources = false;
+            } else if (this.projectSettings.default_speed === 'aggressive') {
+                this.projectSettings.concurrent_limit = 5;
+                this.projectSettings.timeout = 20;
+                this.projectSettings.delay_min = 1;
+                this.projectSettings.delay_max = 2;
+                this.projectSettings.max_retries = 1;
+                this.projectSettings.stealth_mode = false;
+                this.projectSettings.block_resources = true;
+            } else if (this.projectSettings.default_speed === 'balanced') {
+                this.projectSettings.concurrent_limit = 3;
+                this.projectSettings.timeout = 30;
+                this.projectSettings.delay_min = 2;
+                this.projectSettings.delay_max = 5;
+                this.projectSettings.max_retries = 2;
+                this.projectSettings.stealth_mode = true;
+                this.projectSettings.block_resources = true;
+            }
+            // Custom mode - don't change anything, let user control all settings
         },
         
         async startValidation() {
@@ -391,7 +531,15 @@ function projectDashboardApp() {
                         settings: {
                             default_speed: this.projectSettings.default_speed,
                             concurrent_limit: this.projectSettings.concurrent_limit,
-                            timeout: this.projectSettings.timeout
+                            timeout: this.projectSettings.timeout,
+                            delay_min: this.projectSettings.delay_min,
+                            delay_max: this.projectSettings.delay_max,
+                            max_retries: this.projectSettings.max_retries,
+                            headless: this.projectSettings.headless,
+                            user_agent: this.projectSettings.user_agent,
+                            custom_user_agent: this.projectSettings.custom_user_agent,
+                            stealth_mode: this.projectSettings.stealth_mode,
+                            block_resources: this.projectSettings.block_resources
                         }
                     })
                 });
@@ -425,7 +573,37 @@ function projectDashboardApp() {
             }
         },
         
-        init() {
+        async loadProjectSettings() {
+            try {
+                const response = await fetch(`/api/projects/{{ project.id }}/settings`);
+                if (response.ok) {
+                    const settings = await response.json();
+                    // Merge loaded settings with defaults
+                    Object.assign(this.projectSettings, {
+                        name: settings.name || this.projectSettings.name,
+                        description: settings.description || this.projectSettings.description,
+                        default_speed: settings.default_speed || this.projectSettings.default_speed,
+                        concurrent_limit: settings.concurrent_limit || this.projectSettings.concurrent_limit,
+                        timeout: settings.timeout || this.projectSettings.timeout,
+                        delay_min: settings.delay_min || this.projectSettings.delay_min,
+                        delay_max: settings.delay_max || this.projectSettings.delay_max,
+                        max_retries: settings.max_retries || this.projectSettings.max_retries,
+                        headless: settings.headless !== undefined ? settings.headless : this.projectSettings.headless,
+                        user_agent: settings.user_agent || this.projectSettings.user_agent,
+                        custom_user_agent: settings.custom_user_agent || this.projectSettings.custom_user_agent,
+                        stealth_mode: settings.stealth_mode !== undefined ? settings.stealth_mode : this.projectSettings.stealth_mode,
+                        block_resources: settings.block_resources !== undefined ? settings.block_resources : this.projectSettings.block_resources
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading project settings:', error);
+            }
+        },
+        
+        async init() {
+            // Load project settings from database
+            await this.loadProjectSettings();
+            
             // Listen for validation progress
             socket.on('validation_progress', (data) => {
                 this.validationProgress.processed = data.processed;
