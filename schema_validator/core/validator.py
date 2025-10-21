@@ -95,7 +95,13 @@ class SchemaValidator:
                 '--disable-blink-features=AutomationControlled',
                 '--disable-dev-shm-usage',
                 '--disable-web-security',
-                '--disable-features=VizDisplayCompositor'
+                '--disable-features=VizDisplayCompositor',
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+                '--disable-renderer-backgrounding',
+                '--disable-extensions',
+                '--disable-plugins',
+                '--disable-images'
             ]
         )
         
@@ -111,6 +117,12 @@ class SchemaValidator:
                 'Upgrade-Insecure-Requests': '1',
             }
         )
+        
+        # Block unnecessary resources to speed up loading
+        await context.route("**/*", lambda route: (
+            route.abort() if route.request.resource_type in ["image", "media", "font", "stylesheet"] 
+            else route.continue_()
+        ))
         
         # Add stealth scripts
         await context.add_init_script("""
@@ -132,8 +144,12 @@ class SchemaValidator:
     async def extract_schema(self, page: Page, url: str) -> Optional[Dict]:
         """Extract Product schema from page."""
         try:
-            # Wait for page to load completely
-            await page.wait_for_load_state('networkidle', timeout=self.timeout)
+            # Wait for page to load completely - use 'domcontentloaded' instead of 'networkidle'
+            # 'networkidle' waits for no network activity for 500ms, which is too slow for modern sites
+            await page.wait_for_load_state('domcontentloaded', timeout=self.timeout)
+            
+            # Give a small additional wait for dynamic content
+            await page.wait_for_timeout(2000)
             
             # Get page content
             content = await page.content()
