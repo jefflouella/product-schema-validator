@@ -474,6 +474,12 @@ function projectDashboardApp() {
                 this.projectSettings.block_resources = true;
             }
             // Custom mode - don't change anything, let user control all settings
+            
+            // Also update validationSettings to match projectSettings
+            this.validationSettings.timeout = this.projectSettings.timeout;
+            this.validationSettings.concurrent_limit = this.projectSettings.concurrent_limit;
+            this.validationSettings.delay_min = this.projectSettings.delay_min;
+            this.validationSettings.delay_max = this.projectSettings.delay_max;
         },
         
         async startValidation() {
@@ -504,15 +510,16 @@ function projectDashboardApp() {
                     body: JSON.stringify({
                         project_id: {{ project.id }},
                         settings: {
-                            headless: true,
-                            timeout: this.validationSettings.timeout * 1000,
-                            concurrent_limit: this.validationSettings.concurrent_limit,
-                            delay_min: this.validationSettings.delay_min,
-                            delay_max: this.validationSettings.delay_max,
-                            max_retries: 1,
-                            user_agent: 'chrome',
-                            stealth_mode: true,
-                            block_resources: true
+                            headless: this.projectSettings.headless,
+                            timeout: this.projectSettings.timeout * 1000,
+                            concurrent_limit: this.projectSettings.concurrent_limit,
+                            delay_min: this.projectSettings.delay_min,
+                            delay_max: this.projectSettings.delay_max,
+                            max_retries: this.projectSettings.max_retries,
+                            user_agent: this.projectSettings.user_agent,
+                            custom_user_agent: this.projectSettings.custom_user_agent,
+                            stealth_mode: this.projectSettings.stealth_mode,
+                            block_resources: this.projectSettings.block_resources
                         }
                     })
                 });
@@ -610,6 +617,12 @@ function projectDashboardApp() {
                         stealth_mode: settings.stealth_mode !== undefined ? settings.stealth_mode : this.projectSettings.stealth_mode,
                         block_resources: settings.block_resources !== undefined ? settings.block_resources : this.projectSettings.block_resources
                     });
+                    
+                    // Sync validationSettings with projectSettings
+                    this.validationSettings.timeout = this.projectSettings.timeout;
+                    this.validationSettings.concurrent_limit = this.projectSettings.concurrent_limit;
+                    this.validationSettings.delay_min = this.projectSettings.delay_min;
+                    this.validationSettings.delay_max = this.projectSettings.delay_max;
                 }
             } catch (error) {
                 console.error('Error loading project settings:', error);
