@@ -5,7 +5,7 @@ Web routes for Schema Validator application.
 import json
 import asyncio
 from datetime import datetime
-from flask import Blueprint, render_template, request, jsonify, send_file
+from flask import Blueprint, render_template, request, jsonify, send_file, redirect, url_for
 from werkzeug.utils import secure_filename
 
 from .app import get_db, socketio
@@ -19,7 +19,7 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def index():
-    """Home page with instructions and project overview."""
+    """Default landing page - redirects to projects if they exist, otherwise home."""
     db = get_db()
     projects = db.get_projects()
     
@@ -27,18 +27,13 @@ def index():
     if not projects:
         return render_template('home.html')
     
-    # Get URL count per project
-    for project in projects:
-        urls = db.get_urls(project_id=project['id'], status='active')
-        project['url_count'] = len(urls)
-    
-    # If projects exist, show projects overview
-    return render_template('projects.html', projects=projects)
+    # If projects exist, redirect to projects page
+    return redirect(url_for('main.projects'))
 
 
 @bp.route('/home')
 def home():
-    """Welcome/home page."""
+    """Welcome/home page - always shows the home screen."""
     return render_template('home.html')
 
 
