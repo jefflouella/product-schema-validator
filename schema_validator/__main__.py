@@ -20,7 +20,7 @@ def main():
         print("=" * 60)
         
         app = create_app()
-        socketio.run(app, host=Config.HOST, port=Config.PORT, debug=Config.DEBUG)
+        socketio.run(app, host=Config.HOST, port=Config.PORT, debug=Config.DEBUG, allow_unsafe_werkzeug=True)
         
     except KeyboardInterrupt:
         print("\n\nShutting down gracefully...")

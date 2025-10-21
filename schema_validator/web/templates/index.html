@@ -10,9 +10,11 @@
             <h1 class="h2"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
             <p class="text-muted">Monitor and control schema validation</p>
         </div>
-        <button class="btn btn-primary btn-lg" @click="showStartValidationModal = true">
-            <i class="fas fa-play"></i> Start Validation
-        </button>
+        <div class="btn-group" role="group">
+            <button class="btn btn-primary btn-lg" @click="showStartValidationModal = true">
+                <i class="fas fa-play"></i> Start Validation
+            </button>
+        </div>
     </div>
     
     <!-- Project Stats -->
@@ -24,9 +26,14 @@
                     <h5 class="card-title text-primary">{{ project.name }}</h5>
                     <h3 class="text-dark">{{ project.url_count }}</h3>
                     <p class="text-muted">Active URLs</p>
-                    <a href="{{ url_for('main.urls', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-link"></i> View URLs
-                    </a>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success btn-sm" @click="startProjectValidation({{ project.id }}, '{{ project.name }}')">
+                            <i class="fas fa-play"></i> Validate This Project
+                        </button>
+                        <a href="{{ url_for('main.urls', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-link"></i> View URLs
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -63,6 +70,7 @@
                          :style="'width: ' + validationProgress.percent + '%'"
                          x-text="Math.round(validationProgress.percent) + '%'"></div>
                 </div>
+                <p class="text-muted mt-2 mb-0" x-show="validationProgress.projectName" x-text="'Validating: ' + validationProgress.projectName"></p>
                 <p class="text-muted mt-2 mb-0" x-text="'Currently processing: ' + validationProgress.currentUrl"></p>
             </div>
         </div>
@@ -175,7 +183,8 @@ function dashboardApp() {
             processed: 0,
             total: 0,
             percent: 0,
-            currentUrl: ''
+            currentUrl: '',
+            projectName: ''
         },
         validationSettings: {
             project_id: {{ projects[0].id if projects else 'null' }},
@@ -209,6 +218,47 @@ function dashboardApp() {
                     this.validationProgress.processed = 0;
                     this.validationProgress.percent = 0;
                     this.showStartValidationModal = false;
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error starting validation: ' + error.message);
+            }
+        },
+        
+        async startProjectValidation(projectId, projectName) {
+            if (!confirm(`Start validation for "${projectName}" project?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/validation/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        project_id: projectId,
+                        settings: {
+                            headless: true,
+                            timeout: 30000,
+                            concurrent_limit: 3,
+                            delay_min: 2,
+                            delay_max: 5,
+                            max_retries: 1
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.currentRunId = data.run_id;
+                    this.isValidating = true;
+                    this.validationProgress.total = data.total_urls;
+                    this.validationProgress.processed = 0;
+                    this.validationProgress.percent = 0;
+                    this.validationProgress.projectName = projectName;
                 } else {
                     alert('Error: ' + data.error);
                 }

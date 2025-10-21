@@ -33,7 +33,7 @@ def create_app(config_class=Config):
     db = Database()
     
     # Initialize SocketIO
-    socketio.init_app(app)
+    socketio.init_app(app, cors_allowed_origins="*")
     
     # Register routes
     from . import routes
