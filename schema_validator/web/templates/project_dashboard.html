@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - Project Dashboard{% endblock %}
+
+{% block content %}
+<div x-data="projectDashboardApp()">
+    <!-- Project Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.projects') }}">Projects</a></li>
+                    <li class="breadcrumb-item active">{{ project.name }}</li>
+                </ol>
+            </nav>
+            <h1 class="h2 mb-0">{{ project.name }}</h1>
+            <p class="text-muted">{{ project.description or 'No description provided' }}</p>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-outline-primary" @click="showSettingsModal = true">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+            <button class="btn btn-primary" @click="showStartValidationModal = true">
+                <i class="fas fa-play"></i> Start Validation
+            </button>
+        </div>
+    </div>
+    
+    <!-- Project Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ stats.total_urls }}</h3>
+                    <p class="text-muted mb-0">Total URLs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h3 class="text-success">{{ stats.active_urls }}</h3>
+                    <p class="text-muted mb-0">Active URLs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h3 class="text-info">{{ stats.total_runs }}</h3>
+                    <p class="text-muted mb-0">Validation Runs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ stats.last_run_date or 'Never' }}</h3>
+                    <p class="text-muted mb-0">Last Validation</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Validation Progress (shown when active) -->
+    <div x-show="isValidating" class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-spinner fa-spin"></i> Validation in Progress</h5>
+                <div>
+                    <button class="btn btn-sm btn-warning" @click="pauseValidation" x-show="!isPaused">
+                        <i class="fas fa-pause"></i> Pause
+                    </button>
+                    <button class="btn btn-sm btn-success" @click="resumeValidation" x-show="isPaused">
+                        <i class="fas fa-play"></i> Resume
+                    </button>
+                    <button class="btn btn-sm btn-danger" @click="stopValidation">
+                        <i class="fas fa-stop"></i> Stop
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="progress-wrapper">
+                <div class="d-flex justify-content-between mb-2">
+                    <span x-text="validationProgress.processed + ' / ' + validationProgress.total + ' URLs'"></span>
+                    <span x-text="Math.round(validationProgress.percent) + '%'"></span>
+                </div>
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                         role="progressbar" 
+                         :style="'width: ' + validationProgress.percent + '%'"
+                         x-text="Math.round(validationProgress.percent) + '%'"></div>
+                </div>
+                <p class="text-muted mt-2 mb-0" x-text="'Currently processing: ' + validationProgress.currentUrl"></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-link fa-2x text-primary mb-3"></i>
+                    <h5>URL Management</h5>
+                    <p class="text-muted">Add, edit, or manage URLs for this project</p>
+                    <a href="{{ url_for('main.urls', project_id=project.id) }}" class="btn btn-primary">
+                        <i class="fas fa-link"></i> Manage URLs
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-bar fa-2x text-success mb-3"></i>
+                    <h5>View Results</h5>
+                    <p class="text-muted">See validation results and download reports</p>
+                    <a href="{{ url_for('main.results', project_id=project.id) }}" class="btn btn-success">
+                        <i class="fas fa-chart-bar"></i> View Results
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-cog fa-2x text-info mb-3"></i>
+                    <h5>Project Settings</h5>
+                    <p class="text-muted">Configure validation settings for this project</p>
+                    <button class="btn btn-info" @click="showSettingsModal = true">
+                        <i class="fas fa-cog"></i> Configure
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Validation Runs -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Validation Runs</h5>
+                <a href="{{ url_for('main.results', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if recent_runs %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Run ID</th>
+                            <th>Start Time</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for run in recent_runs %}
+                        <tr>
+                            <td><strong>#{{ run.id }}</strong></td>
+                            <td>{{ run.start_time[:16] }}</td>
+                            <td>
+                                <span class="badge status-{{ run.status }}">
+                                    {{ run.status | capitalize }}
+                                </span>
+                            </td>
+                            <td>{{ run.processed_urls }} / {{ run.total_urls }}</td>
+                            <td>
+                                <a href="{{ url_for('main.results', project_id=project.id, run_id=run.id) }}" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-4">No validation runs yet for this project. Start your first validation!</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Start Validation Modal -->
+    <div class="modal fade" :class="{'show d-block': showStartValidationModal}" tabindex="-1" @click.self="showStartValidationModal = false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-play"></i> Start Validation</h5>
+                    <button type="button" class="btn-close" @click="showStartValidationModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>{{ project.name }}</strong> - {{ stats.active_urls }} active URLs will be validated
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Validation Speed</label>
+                        <select class="form-select" x-model="validationSettings.speed">
+                            <option value="conservative">Conservative (Slow but Safe)</option>
+                            <option value="balanced">Balanced (Recommended)</option>
+                            <option value="aggressive">Aggressive (Fast but Risky)</option>
+                            <option value="custom">Custom Settings</option>
+                        </select>
+                    </div>
+                    
+                    <div x-show="validationSettings.speed === 'custom'" class="mb-3">
+                        <label class="form-label">Concurrent Limit</label>
+                        <input type="number" class="form-control" x-model="validationSettings.concurrent_limit" min="1" max="10">
+                    </div>
+                    
+                    <div x-show="validationSettings.speed === 'custom'" class="mb-3">
+                        <label class="form-label">Delay Range (seconds)</label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="number" class="form-control" x-model="validationSettings.delay_min" min="1" max="30" placeholder="Min">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="number" class="form-control" x-model="validationSettings.delay_max" min="1" max="30" placeholder="Max">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="showStartValidationModal = false">Cancel</button>
+                    <button type="button" class="btn btn-primary" @click="startValidation">
+                        <i class="fas fa-play"></i> Start Validation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Project Settings Modal -->
+    <div class="modal fade" :class="{'show d-block': showSettingsModal}" tabindex="-1" @click.self="showSettingsModal = false">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-cog"></i> Project Settings</h5>
+                    <button type="button" class="btn-close" @click="showSettingsModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <h6>Project Information</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Project Name</label>
+                            <input type="text" class="form-control" x-model="projectSettings.name">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" x-model="projectSettings.description" rows="3"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Default Validation Settings</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Validation Speed</label>
+                            <select class="form-select" x-model="projectSettings.default_speed">
+                                <option value="conservative">Conservative</option>
+                                <option value="balanced">Balanced</option>
+                                <option value="aggressive">Aggressive</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Concurrent Limit</label>
+                            <input type="number" class="form-control" x-model="projectSettings.concurrent_limit" min="1" max="10">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Timeout (seconds)</label>
+                            <input type="number" class="form-control" x-model="projectSettings.timeout" min="10" max="120">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="showSettingsModal = false">Cancel</button>
+                    <button type="button" class="btn btn-primary" @click="saveSettings">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-backdrop fade" :class="{'show': showStartValidationModal || showSettingsModal}" x-show="showStartValidationModal || showSettingsModal"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function projectDashboardApp() {
+    return {
+        isValidating: false,
+        isPaused: false,
+        showStartValidationModal: false,
+        showSettingsModal: false,
+        currentRunId: null,
+        validationProgress: {
+            processed: 0,
+            total: 0,
+            percent: 0,
+            currentUrl: ''
+        },
+        validationSettings: {
+            speed: 'balanced',
+            concurrent_limit: 3,
+            delay_min: 2,
+            delay_max: 5,
+            timeout: 30
+        },
+        projectSettings: {
+            name: '{{ project.name }}',
+            description: '{{ project.description or "" }}',
+            default_speed: 'balanced',
+            concurrent_limit: 3,
+            timeout: 30
+        },
+        
+        async startValidation() {
+            // Apply speed presets
+            if (this.validationSettings.speed === 'conservative') {
+                this.validationSettings.concurrent_limit = 1;
+                this.validationSettings.delay_min = 5;
+                this.validationSettings.delay_max = 10;
+                this.validationSettings.timeout = 45;
+            } else if (this.validationSettings.speed === 'balanced') {
+                this.validationSettings.concurrent_limit = 3;
+                this.validationSettings.delay_min = 2;
+                this.validationSettings.delay_max = 5;
+                this.validationSettings.timeout = 30;
+            } else if (this.validationSettings.speed === 'aggressive') {
+                this.validationSettings.concurrent_limit = 5;
+                this.validationSettings.delay_min = 1;
+                this.validationSettings.delay_max = 2;
+                this.validationSettings.timeout = 20;
+            }
+            
+            try {
+                const response = await fetch('/api/validation/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        project_id: {{ project.id }},
+                        settings: {
+                            headless: true,
+                            timeout: this.validationSettings.timeout * 1000,
+                            concurrent_limit: this.validationSettings.concurrent_limit,
+                            delay_min: this.validationSettings.delay_min,
+                            delay_max: this.validationSettings.delay_max,
+                            max_retries: 1
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.currentRunId = data.run_id;
+                    this.isValidating = true;
+                    this.validationProgress.total = data.total_urls;
+                    this.validationProgress.processed = 0;
+                    this.validationProgress.percent = 0;
+                    this.showStartValidationModal = false;
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error starting validation: ' + error.message);
+            }
+        },
+        
+        async saveSettings() {
+            try {
+                const response = await fetch('/api/projects/{{ project.id }}', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: this.projectSettings.name,
+                        description: this.projectSettings.description,
+                        settings: {
+                            default_speed: this.projectSettings.default_speed,
+                            concurrent_limit: this.projectSettings.concurrent_limit,
+                            timeout: this.projectSettings.timeout
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    this.showSettingsModal = false;
+                    window.location.reload();
+                } else {
+                    alert('Error saving settings');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        },
+        
+        pauseValidation() {
+            socket.emit('pause_validation');
+            this.isPaused = true;
+        },
+        
+        resumeValidation() {
+            socket.emit('resume_validation');
+            this.isPaused = false;
+        },
+        
+        stopValidation() {
+            if (confirm('Are you sure you want to stop validation?')) {
+                socket.emit('stop_validation');
+                this.isValidating = false;
+                this.isPaused = false;
+            }
+        },
+        
+        init() {
+            // Listen for validation progress
+            socket.on('validation_progress', (data) => {
+                this.validationProgress.processed = data.processed;
+                this.validationProgress.total = data.total;
+                this.validationProgress.percent = data.progress;
+                this.validationProgress.currentUrl = data.url;
+            });
+            
+            // Listen for validation complete
+            socket.on('validation_complete', (data) => {
+                this.isValidating = false;
+                this.isPaused = false;
+                alert('Validation completed! Total results: ' + data.total_results);
+                window.location.reload();
+            });
+            
+            // Listen for validation error
+            socket.on('validation_error', (data) => {
+                this.isValidating = false;
+                this.isPaused = false;
+                alert('Validation error: ' + data.error);
+            });
+        }
+    }
+}
+</script>
+{% endblock %}

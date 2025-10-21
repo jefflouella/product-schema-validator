@@ -19,7 +19,7 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def index():
-    """Dashboard page."""
+    """Home page with instructions and project overview."""
     db = get_db()
     projects = db.get_projects()
     
@@ -28,13 +28,45 @@ def index():
         urls = db.get_urls(project_id=project['id'], status='active')
         project['url_count'] = len(urls)
     
-    # Get recent validation runs
-    recent_runs = db.get_validation_runs(limit=5)
+    # If no projects exist, show home page
+    if not projects:
+        return render_template('home.html')
     
-    return render_template('index.html', 
-                         projects=projects,
-                         recent_runs=recent_runs,
-                         config=Config)
+    # If projects exist, show projects overview
+    return render_template('projects.html', projects=projects)
+
+
+@bp.route('/home')
+def home():
+    """Welcome/home page."""
+    return render_template('home.html')
+
+
+@bp.route('/project/<int:project_id>')
+def project_dashboard(project_id):
+    """Individual project dashboard."""
+    db = get_db()
+    project = db.get_project(project_id)
+    
+    if not project:
+        return render_template('404.html'), 404
+    
+    # Get project statistics
+    urls = db.get_urls(project_id=project_id)
+    active_urls = db.get_urls(project_id=project_id, status='active')
+    validation_runs = db.get_validation_runs(project_id=project_id, limit=5)
+    
+    stats = {
+        'total_urls': len(urls),
+        'active_urls': len(active_urls),
+        'total_runs': len(validation_runs),
+        'last_run_date': validation_runs[0]['start_time'][:10] if validation_runs else None
+    }
+    
+    return render_template('project_dashboard.html',
+                         project=project,
+                         stats=stats,
+                         recent_runs=validation_runs)
 
 
 @bp.route('/projects')
