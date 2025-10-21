@@ -27,25 +27,40 @@ def start_validation_task(run_id, urls, settings):
     # Create validator with progress callback
     async def progress_callback(data):
         """Emit progress updates via SocketIO."""
-        # Update database
-        processed = data['processed']
-        db.update_validation_run(run_id, processed_urls=processed)
-        
-        # Save result to database
-        url = data['url']
-        url_id = url_id_map.get(url)
-        if url_id:
-            db.add_validation_result(run_id, url_id, data['result'])
-        
-        # Emit to clients
-        socketio.emit('validation_progress', {
-            'run_id': run_id,
-            'url': url,
-            'result': data['result'],
-            'progress': data['progress'],
-            'processed': processed,
-            'total': data['total']
-        })
+        try:
+            # Update database
+            processed = data['processed']
+            db.update_validation_run(run_id, processed_urls=processed)
+            
+            # Save result to database
+            url = data['url']
+            url_id = url_id_map.get(url)
+            if url_id and data['result'] is not None:
+                db.add_validation_result(run_id, url_id, data['result'])
+            elif url_id and data['result'] is None:
+                # Handle failed validation
+                db.add_validation_result(run_id, url_id, {
+                    'status': 'error',
+                    'error': 'Failed to validate URL',
+                    'score': 0.0
+                })
+            
+            # Emit to clients
+            socketio.emit('validation_progress', {
+                'run_id': run_id,
+                'url': url,
+                'result': data['result'],
+                'progress': data['progress'],
+                'processed': processed,
+                'total': data['total']
+            })
+        except Exception as e:
+            print(f"Error in progress callback: {e}")
+            # Emit error to clients
+            socketio.emit('validation_error', {
+                'run_id': run_id,
+                'error': f'Progress callback error: {str(e)}'
+            })
     
     # Create validator
     current_validator = SchemaValidator(

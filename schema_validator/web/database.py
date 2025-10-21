@@ -366,6 +366,26 @@ class Database:
         conn = self.get_connection()
         cursor = conn.cursor()
         
+        # Handle different result structures
+        status = result.get('status', 'error')
+        schema_data = result.get('schema_data', {})
+        response_time = result.get('response_time', 0.0)
+        
+        # Extract validation data safely
+        validation = result.get('validation', {})
+        if isinstance(validation, dict):
+            score = validation.get('score', 0.0)
+            errors = validation.get('errors', [])
+            warnings = validation.get('warnings', [])
+        else:
+            score = 0.0
+            errors = []
+            warnings = []
+        
+        # Handle error case
+        if result.get('error'):
+            errors.append(result['error'])
+        
         cursor.execute('''
             INSERT INTO validation_results 
             (run_id, url_id, status, schema_data, errors, score, validated_at, response_time)
@@ -373,15 +393,15 @@ class Database:
         ''', (
             run_id,
             url_id,
-            result.get('status', 'error'),
-            json.dumps(result.get('schema_data', {})),
+            status,
+            json.dumps(schema_data),
             json.dumps({
-                'errors': result.get('validation', {}).get('errors', []),
-                'warnings': result.get('validation', {}).get('warnings', [])
+                'errors': errors,
+                'warnings': warnings
             }),
-            result.get('validation', {}).get('score', 0.0),
+            score,
             datetime.now().isoformat(),
-            result.get('response_time', 0.0)
+            response_time
         ))
         
         result_id = cursor.lastrowid
