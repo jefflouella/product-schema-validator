@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block title %}URLs - Schema Validator{% endblock %}
+
+{% block content %}
+<div x-data="urlsApp()">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2"><i class="fas fa-link"></i> URLs</h1>
+            <p class="text-muted">Manage URLs for validation</p>
+        </div>
+        <div>
+            <button class="btn btn-outline-primary me-2" @click="showBulkAddModal = true">
+                <i class="fas fa-file-import"></i> Bulk Add
+            </button>
+            <button class="btn btn-primary" @click="showAddModal = true">
+                <i class="fas fa-plus"></i> Add URL
+            </button>
+        </div>
+    </div>
+    
+    <!-- Filter Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">Project</label>
+                    <select class="form-select" x-model="filterProject" @change="loadUrls()">
+                        <option value="">All Projects</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}" {% if project.id == selected_project_id %}selected{% endif %}>{{ project.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" x-model="filterStatus" @change="loadUrls()">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" x-model="searchQuery" @input="filterUrls" placeholder="Search URLs...">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- URLs Table -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">URLs (<span x-text="filteredUrls.length"></span>)</h5>
+                <button class="btn btn-sm btn-danger" @click="bulkDelete" x-show="selectedUrls.length > 0">
+                    <i class="fas fa-trash"></i> Delete Selected (<span x-text="selectedUrls.length"></span>)
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" class="form-check-input" @change="toggleSelectAll" :checked="allSelected">
+                            </th>
+                            <th>URL</th>
+                            <th>Project</th>
+                            <th>Status</th>
+                            <th>Tags</th>
+                            <th>Added</th>
+                            <th style="width: 150px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="url in filteredUrls" :key="url.id">
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="form-check-input" :value="url.id" x-model="selectedUrls">
+                                </td>
+                                <td>
+                                    <a :href="url.url" target="_blank" class="text-decoration-none">
+                                        <span x-text="url.url.length > 60 ? url.url.substring(0, 60) + '...' : url.url"></span>
+                                        <i class="fas fa-external-link-alt fa-xs"></i>
+                                    </a>
+                                </td>
+                                <td><span x-text="getProjectName(url.project_id)"></span></td>
+                                <td>
+                                    <span class="badge" :class="url.status === 'active' ? 'bg-success' : 'bg-secondary'" x-text="url.status"></span>
+                                </td>
+                                <td><span x-text="url.tags || '-'" class="text-muted"></span></td>
+                                <td><small x-text="url.added_date.substring(0, 10)" class="text-muted"></small></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" @click="editUrl(url)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @click="deleteUrl(url.id)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add URL Modal -->
+    <div class="modal fade" :class="{'show d-block': showAddModal}" tabindex="-1" @click.self="showAddModal = false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas" :class="editMode ? 'fa-edit' : 'fa-plus'"></i>
+                        <span x-text="editMode ? 'Edit URL' : 'Add URL'"></span>
+                    </h5>
+                    <button type="button" class="btn-close" @click="showAddModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">URL *</label>
+                        <input type="url" class="form-control" x-model="formData.url" placeholder="https://example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Project *</label>
+                        <select class="form-select" x-model="formData.project_id">
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" x-model="formData.status">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tags</label>
+                        <input type="text" class="form-control" x-model="formData.tags" placeholder="e.g. ecommerce, product-page">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" x-model="formData.notes" rows="2" placeholder="Optional notes"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="showAddModal = false">Cancel</button>
+                    <button type="button" class="btn btn-primary" @click="saveUrl">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bulk Add Modal -->
+    <div class="modal fade" :class="{'show d-block': showBulkAddModal}" tabindex="-1" @click.self="showBulkAddModal = false">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-import"></i> Bulk Add URLs</h5>
+                    <button type="button" class="btn-close" @click="showBulkAddModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Project *</label>
+                        <select class="form-select" x-model="bulkFormData.project_id">
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">URLs (one per line) *</label>
+                        <textarea class="form-control" x-model="bulkFormData.urls_text" rows="10" 
+                                  placeholder="https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3"></textarea>
+                        <small class="text-muted">Enter one URL per line</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="showBulkAddModal = false">Cancel</button>
+                    <button type="button" class="btn btn-primary" @click="saveBulkUrls">
+                        <i class="fas fa-save"></i> Add URLs
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-backdrop fade" :class="{'show': showAddModal || showBulkAddModal}" x-show="showAddModal || showBulkAddModal"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function urlsApp() {
+    return {
+        showAddModal: false,
+        showBulkAddModal: false,
+        editMode: false,
+        currentUrlId: null,
+        filterProject: '{{ selected_project_id or "" }}',
+        filterStatus: '',
+        searchQuery: '',
+        selectedUrls: [],
+        urls: {{ urls | tojson }},
+        filteredUrls: [],
+        projects: {{ projects | tojson }},
+        formData: {
+            url: '',
+            project_id: {{ projects[0].id if projects else 'null' }},
+            status: 'active',
+            tags: '',
+            notes: ''
+        },
+        bulkFormData: {
+            project_id: {{ projects[0].id if projects else 'null' }},
+            urls_text: ''
+        },
+        
+        get allSelected() {
+            return this.filteredUrls.length > 0 && this.selectedUrls.length === this.filteredUrls.length;
+        },
+        
+        async loadUrls() {
+            try {
+                let url = '/api/urls?';
+                if (this.filterProject) url += `project_id=${this.filterProject}&`;
+                if (this.filterStatus) url += `status=${this.filterStatus}&`;
+                
+                const response = await fetch(url);
+                this.urls = await response.json();
+                this.filterUrls();
+            } catch (error) {
+                alert('Error loading URLs: ' + error.message);
+            }
+        },
+        
+        filterUrls() {
+            this.filteredUrls = this.urls.filter(url => {
+                if (this.searchQuery) {
+                    return url.url.toLowerCase().includes(this.searchQuery.toLowerCase());
+                }
+                return true;
+            });
+        },
+        
+        getProjectName(projectId) {
+            const project = this.projects.find(p => p.id === projectId);
+            return project ? project.name : 'Unknown';
+        },
+        
+        toggleSelectAll(event) {
+            if (event.target.checked) {
+                this.selectedUrls = this.filteredUrls.map(url => url.id);
+            } else {
+                this.selectedUrls = [];
+            }
+        },
+        
+        async saveUrl() {
+            if (!this.formData.url.trim()) {
+                alert('URL is required');
+                return;
+            }
+            
+            try {
+                const url = this.editMode 
+                    ? `/api/urls/${this.currentUrlId}` 
+                    : '/api/urls';
+                const method = this.editMode ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(this.formData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.showAddModal = false;
+                    this.loadUrls();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error saving URL: ' + error.message);
+            }
+        },
+        
+        async saveBulkUrls() {
+            const urls = this.bulkFormData.urls_text.split('\n').filter(url => url.trim());
+            
+            if (urls.length === 0) {
+                alert('Please enter at least one URL');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/urls/bulk', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        urls: urls,
+                        project_id: this.bulkFormData.project_id
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.showBulkAddModal = false;
+                    this.loadUrls();
+                    alert(data.message);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error adding URLs: ' + error.message);
+            }
+        },
+        
+        editUrl(url) {
+            this.editMode = true;
+            this.currentUrlId = url.id;
+            this.formData = { ...url };
+            this.showAddModal = true;
+        },
+        
+        async deleteUrl(urlId) {
+            if (!confirm('Are you sure you want to delete this URL?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/urls/${urlId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    this.loadUrls();
+                } else {
+                    alert('Error deleting URL');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        },
+        
+        async bulkDelete() {
+            if (!confirm(`Are you sure you want to delete ${this.selectedUrls.length} URLs?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/urls/bulk-delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url_ids: this.selectedUrls })
+                });
+                
+                if (response.ok) {
+                    this.selectedUrls = [];
+                    this.loadUrls();
+                } else {
+                    alert('Error deleting URLs');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        },
+        
+        init() {
+            this.filterUrls();
+            
+            // Reset form when modal is closed
+            this.$watch('showAddModal', value => {
+                if (!value) {
+                    this.editMode = false;
+                    this.currentUrlId = null;
+                    this.formData = {
+                        url: '',
+                        project_id: this.projects[0]?.id || null,
+                        status: 'active',
+                        tags: '',
+                        notes: ''
+                    };
+                }
+            });
+            
+            this.$watch('showBulkAddModal', value => {
+                if (!value) {
+                    this.bulkFormData = {
+                        project_id: this.projects[0]?.id || null,
+                        urls_text: ''
+                    };
+                }
+            });
+        }
+    }
+}
+</script>
+{% endblock %}
+

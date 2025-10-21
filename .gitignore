@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+venv_playwright/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Data and Results
+results/
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+validation.log
+
+# URLs (user-specific)
+urls.txt
+urls copy.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports (generated files)
+*.csv
+*.xlsx
+*.json
+*.html
+!templates/*.html
+!schema_validator/web/templates/*.html
+
+# Plans
+*.plan.md
+

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Schema Validator{% endblock %}
+
+{% block content %}
+<div x-data="settingsApp()">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2"><i class="fas fa-cog"></i> Settings</h1>
+            <p class="text-muted">Configure validation parameters</p>
+        </div>
+    </div>
+    
+    <!-- Settings Form -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Validation Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6>Browser Configuration</h6>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" x-model="settings.headless" id="headless">
+                            <label class="form-check-label" for="headless">
+                                Headless Mode
+                                <small class="text-muted d-block">Run browser without visible window (recommended)</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Timeout Settings</h6>
+                        <label class="form-label">Page Load Timeout (milliseconds)</label>
+                        <input type="number" class="form-control" x-model="settings.timeout" min="5000" max="120000" step="1000">
+                        <small class="text-muted">Current: <span x-text="(settings.timeout / 1000) + ' seconds'"></span></small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Rate Limiting</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Minimum Delay (seconds)</label>
+                                <input type="number" class="form-control" x-model="settings.delay_min" min="1" max="30">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Maximum Delay (seconds)</label>
+                                <input type="number" class="form-control" x-model="settings.delay_max" min="1" max="30">
+                            </div>
+                        </div>
+                        <small class="text-muted">Random delay between requests to avoid rate limiting</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Concurrency</h6>
+                        <label class="form-label">Concurrent Limit</label>
+                        <input type="number" class="form-control" x-model="settings.concurrent_limit" min="1" max="10">
+                        <small class="text-muted">Number of parallel browser instances (1-10, lower = slower but safer)</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Retry Settings</h6>
+                        <label class="form-label">Maximum Retries</label>
+                        <input type="number" class="form-control" x-model="settings.max_retries" min="0" max="5">
+                        <small class="text-muted">Number of times to retry failed requests</small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> <strong>Note:</strong> These are default settings. You can override them when starting a validation run.
+                    </div>
+                    
+                    <button class="btn btn-primary" @click="saveSettings">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                    <button class="btn btn-outline-secondary" @click="resetSettings">
+                        <i class="fas fa-undo"></i> Reset to Defaults
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recommended Settings</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Conservative (Slow but Safe)</h6>
+                    <ul class="small text-muted">
+                        <li>Concurrent Limit: 1</li>
+                        <li>Delay: 5-10 seconds</li>
+                        <li>Timeout: 45 seconds</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Balanced (Recommended)</h6>
+                    <ul class="small text-muted">
+                        <li>Concurrent Limit: 3</li>
+                        <li>Delay: 2-5 seconds</li>
+                        <li>Timeout: 30 seconds</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Aggressive (Fast but Risky)</h6>
+                    <ul class="small text-muted">
+                        <li>Concurrent Limit: 5-10</li>
+                        <li>Delay: 1-2 seconds</li>
+                        <li>Timeout: 20 seconds</li>
+                    </ul>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> Aggressive settings may trigger anti-bot protection.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">System Info</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Version:</strong> 2.0.0</p>
+                    <p class="mb-1"><strong>Database:</strong> SQLite</p>
+                    <p class="mb-1"><strong>Browser:</strong> Chromium (Playwright)</p>
+                    <p class="mb-0"><strong>Anti-Bot:</strong> Enabled</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function settingsApp() {
+    return {
+        settings: {
+            headless: {{ config.DEFAULT_HEADLESS | tojson }},
+            timeout: {{ config.DEFAULT_TIMEOUT }},
+            delay_min: {{ config.DEFAULT_DELAY_MIN }},
+            delay_max: {{ config.DEFAULT_DELAY_MAX }},
+            max_retries: {{ config.DEFAULT_MAX_RETRIES }},
+            concurrent_limit: {{ config.DEFAULT_CONCURRENT_LIMIT }}
+        },
+        
+        defaultSettings: {
+            headless: {{ config.DEFAULT_HEADLESS | tojson }},
+            timeout: {{ config.DEFAULT_TIMEOUT }},
+            delay_min: {{ config.DEFAULT_DELAY_MIN }},
+            delay_max: {{ config.DEFAULT_DELAY_MAX }},
+            max_retries: {{ config.DEFAULT_MAX_RETRIES }},
+            concurrent_limit: {{ config.DEFAULT_CONCURRENT_LIMIT }}
+        },
+        
+        saveSettings() {
+            // Validate settings
+            if (this.settings.delay_min > this.settings.delay_max) {
+                alert('Minimum delay cannot be greater than maximum delay');
+                return;
+            }
+            
+            // Save to localStorage for now (could be saved to backend)
+            localStorage.setItem('validationSettings', JSON.stringify(this.settings));
+            alert('Settings saved successfully!');
+        },
+        
+        resetSettings() {
+            if (confirm('Are you sure you want to reset settings to defaults?')) {
+                this.settings = { ...this.defaultSettings };
+                localStorage.removeItem('validationSettings');
+            }
+        },
+        
+        init() {
+            // Load saved settings from localStorage
+            const saved = localStorage.getItem('validationSettings');
+            if (saved) {
+                try {
+                    this.settings = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Error loading saved settings:', e);
+                }
+            }
+        }
+    }
+}
+</script>
+{% endblock %}
+

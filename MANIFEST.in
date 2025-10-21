@@ -1,0 +1,19 @@
+# Include package data files
+include README.md
+include LICENSE
+include requirements.txt
+
+# Include web templates and static files
+recursive-include schema_validator/web/templates *.html
+recursive-include schema_validator/web/static *.css *.js *.png *.jpg *.svg
+
+# Include data directory placeholders
+include data/.gitkeep
+include data/results/.gitkeep
+
+# Exclude unnecessary files
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.so
+global-exclude .DS_Store
+
