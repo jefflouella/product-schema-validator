@@ -230,9 +230,22 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @click="showStartValidationModal = false">Cancel</button>
-                    <button type="button" class="btn btn-primary" @click="startValidation">
+                    <button type="button" class="btn btn-primary" @click="startValidation" x-show="!isValidating">
                         <i class="fas fa-play"></i> Start Validation
                     </button>
+                    
+                    <!-- Validation Control Buttons -->
+                    <div x-show="isValidating" class="btn-group" role="group">
+                        <button type="button" class="btn btn-warning" @click="pauseValidation" x-show="!isPaused">
+                            <i class="fas fa-pause"></i> Pause
+                        </button>
+                        <button type="button" class="btn btn-success" @click="resumeValidation" x-show="isPaused">
+                            <i class="fas fa-play"></i> Resume
+                        </button>
+                        <button type="button" class="btn btn-danger" @click="stopValidation">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -496,7 +509,10 @@ function projectDashboardApp() {
                             concurrent_limit: this.validationSettings.concurrent_limit,
                             delay_min: this.validationSettings.delay_min,
                             delay_max: this.validationSettings.delay_max,
-                            max_retries: 1
+                            max_retries: 1,
+                            user_agent: 'chrome',
+                            stealth_mode: true,
+                            block_resources: true
                         }
                     })
                 });
@@ -625,6 +641,25 @@ function projectDashboardApp() {
                 this.isValidating = false;
                 this.isPaused = false;
                 alert('Validation error: ' + data.error);
+            });
+            
+            // Listen for validation paused
+            socket.on('validation_paused', (data) => {
+                this.isPaused = true;
+                console.log('Validation paused:', data.message);
+            });
+            
+            // Listen for validation resumed
+            socket.on('validation_resumed', (data) => {
+                this.isPaused = false;
+                console.log('Validation resumed:', data.message);
+            });
+            
+            // Listen for validation stopped
+            socket.on('validation_stopped', (data) => {
+                this.isValidating = false;
+                this.isPaused = false;
+                console.log('Validation stopped:', data.message);
             });
         }
     }

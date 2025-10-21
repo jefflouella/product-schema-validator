@@ -318,6 +318,17 @@ def api_get_validation_runs():
     return jsonify(runs)
 
 
+@bp.route('/api/validation/runs/<int:run_id>', methods=['DELETE'])
+def api_delete_validation_run(run_id):
+    """Delete a validation run."""
+    db = get_db()
+    
+    # Delete the run (this should cascade to results)
+    db.delete_validation_run(run_id)
+    
+    return jsonify({'message': 'Validation run deleted successfully'})
+
+
 @bp.route('/api/validation/runs/<int:run_id>', methods=['GET'])
 def api_get_validation_run(run_id):
     """Get a specific validation run."""

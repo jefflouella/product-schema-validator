@@ -409,6 +409,20 @@ class Database:
         conn.close()
         return result_id
     
+    def delete_validation_run(self, run_id: int):
+        """Delete a validation run and all its results."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Delete validation results first (foreign key constraint)
+        cursor.execute('DELETE FROM validation_results WHERE run_id = ?', (run_id,))
+        
+        # Delete the validation run
+        cursor.execute('DELETE FROM validation_runs WHERE id = ?', (run_id,))
+        
+        conn.commit()
+        conn.close()
+    
     def get_validation_results(self, run_id: int) -> List[Dict]:
         """Get validation results for a run."""
         conn = self.get_connection()

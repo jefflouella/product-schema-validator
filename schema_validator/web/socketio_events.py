@@ -130,7 +130,7 @@ def handle_pause_validation():
     """Handle pause validation request."""
     global current_validator
     if current_validator:
-        current_validator.pause()
+        current_validator.state.pause()
         emit('validation_paused', {'message': 'Validation paused'})
     else:
         emit('error', {'message': 'No active validation to pause'})
@@ -141,7 +141,7 @@ def handle_resume_validation():
     """Handle resume validation request."""
     global current_validator
     if current_validator:
-        current_validator.resume()
+        current_validator.state.resume()
         emit('validation_resumed', {'message': 'Validation resumed'})
     else:
         emit('error', {'message': 'No active validation to resume'})
