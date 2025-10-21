@@ -45,6 +45,6 @@ Thumbs.db
 !templates/*.html
 !schema_validator/web/templates/*.html
 
-# Plans
-*.plan.md
+# Plans (commented out to allow tracking of important plan files)
+# *.plan.md
 
