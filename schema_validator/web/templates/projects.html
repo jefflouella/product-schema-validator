@@ -130,6 +130,7 @@ function projectsApp() {
                 const data = await response.json();
                 
                 if (response.ok) {
+                    loadProjectTree(); // Refresh the navigation tree
                     window.location.reload();
                 } else {
                     alert('Error: ' + data.error);
@@ -170,6 +171,7 @@ function projectsApp() {
                 const data = await response.json();
                 
                 if (response.ok) {
+                    loadProjectTree(); // Refresh the navigation tree
                     window.location.reload();
                 } else {
                     alert('Error: ' + data.error);

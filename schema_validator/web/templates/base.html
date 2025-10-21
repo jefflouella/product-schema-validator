@@ -115,6 +115,64 @@
         .status-error { background-color: var(--danger-color); color: white; }
         .status-running { background-color: var(--info-color); color: white; }
         
+        /* Project Tree Navigation */
+        .project-tree {
+            margin-left: 15px;
+        }
+        .project-item {
+            margin-bottom: 5px;
+        }
+        .project-header {
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .project-header:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .project-header.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .project-toggle {
+            margin-right: 8px;
+            transition: transform 0.2s;
+            width: 12px;
+            text-align: center;
+        }
+        .project-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        .project-children {
+            margin-left: 20px;
+            display: none;
+        }
+        .project-children.expanded {
+            display: block;
+        }
+        .project-child {
+            display: block;
+            padding: 5px 10px 5px 20px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .project-child:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+        }
+        .project-child.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
         .progress-wrapper {
             margin: 1rem 0;
         }
@@ -176,16 +234,11 @@
                                 <i class="fas fa-folder"></i> Projects
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'main.urls' %}active{% endif %}" href="{{ url_for('main.urls') }}">
-                                <i class="fas fa-link"></i> URLs
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'main.results' %}active{% endif %}" href="{{ url_for('main.results') }}">
-                                <i class="fas fa-chart-bar"></i> Results
-                            </a>
-                        </li>
+                        
+                        <!-- Project Tree Navigation -->
+                        <div id="project-tree" class="project-tree">
+                            <!-- This will be populated by JavaScript -->
+                        </div>
                     </ul>
                     
                     <div class="px-3 mt-auto pt-4">
@@ -236,6 +289,113 @@
         socket.on('error', function(data) {
             alert('Error: ' + data.message);
         });
+        
+        // Project Tree Navigation
+        function loadProjectTree() {
+            fetch('/api/projects')
+                .then(response => response.json())
+                .then(projects => {
+                    const treeContainer = document.getElementById('project-tree');
+                    treeContainer.innerHTML = '';
+                    
+                    projects.forEach(project => {
+                        const projectItem = document.createElement('div');
+                        projectItem.className = 'project-item';
+                        projectItem.innerHTML = `
+                            <div class="project-header" onclick="toggleProject(${project.id})" id="project-${project.id}">
+                                <span class="project-toggle" id="toggle-${project.id}">▶</span>
+                                <span class="project-name">${project.name}</span>
+                            </div>
+                            <div class="project-children" id="children-${project.id}">
+                                <a href="/project/${project.id}" class="project-child" id="dashboard-${project.id}">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </a>
+                                <a href="/urls?project_id=${project.id}" class="project-child" id="urls-${project.id}">
+                                    <i class="fas fa-link"></i> URLs
+                                </a>
+                                <a href="/results?project_id=${project.id}" class="project-child" id="results-${project.id}">
+                                    <i class="fas fa-chart-bar"></i> Results
+                                </a>
+                            </div>
+                        `;
+                        treeContainer.appendChild(projectItem);
+                    });
+                    
+                    // Set active states based on current page
+                    setActiveStates();
+                })
+                .catch(error => console.error('Error loading projects:', error));
+        }
+        
+        function toggleProject(projectId) {
+            const toggle = document.getElementById(`toggle-${projectId}`);
+            const children = document.getElementById(`children-${projectId}`);
+            
+            if (children.classList.contains('expanded')) {
+                children.classList.remove('expanded');
+                toggle.classList.remove('expanded');
+            } else {
+                children.classList.add('expanded');
+                toggle.classList.add('expanded');
+            }
+        }
+        
+        function setActiveStates() {
+            const currentPath = window.location.pathname;
+            
+            // Clear all active states
+            document.querySelectorAll('.project-header').forEach(header => {
+                header.classList.remove('active');
+            });
+            document.querySelectorAll('.project-child').forEach(child => {
+                child.classList.remove('active');
+            });
+            
+            // Set active states based on current path
+            if (currentPath.startsWith('/project/')) {
+                const projectId = currentPath.split('/')[2];
+                document.getElementById(`project-${projectId}`).classList.add('active');
+                document.getElementById(`dashboard-${projectId}`).classList.add('active');
+                // Auto-expand the project
+                const children = document.getElementById(`children-${projectId}`);
+                const toggle = document.getElementById(`toggle-${projectId}`);
+                if (children && !children.classList.contains('expanded')) {
+                    children.classList.add('expanded');
+                    toggle.classList.add('expanded');
+                }
+            } else if (currentPath.startsWith('/urls')) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const projectId = urlParams.get('project_id');
+                if (projectId) {
+                    document.getElementById(`project-${projectId}`).classList.add('active');
+                    document.getElementById(`urls-${projectId}`).classList.add('active');
+                    // Auto-expand the project
+                    const children = document.getElementById(`children-${projectId}`);
+                    const toggle = document.getElementById(`toggle-${projectId}`);
+                    if (children && !children.classList.contains('expanded')) {
+                        children.classList.add('expanded');
+                        toggle.classList.add('expanded');
+                    }
+                }
+            } else if (currentPath.startsWith('/results')) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const projectId = urlParams.get('project_id');
+                if (projectId) {
+                    document.getElementById(`project-${projectId}`).classList.add('active');
+                    document.getElementById(`results-${projectId}`).classList.add('active');
+                    // Auto-expand the project
+                    const children = document.getElementById(`children-${projectId}`);
+                    const toggle = document.getElementById(`toggle-${projectId}`);
+                    if (children && !children.classList.contains('expanded')) {
+                        children.classList.add('expanded');
+                        toggle.classList.add('expanded');
+                    }
+                }
+            }
+        }
+        
+        // Load project tree when page loads
+        document.addEventListener('DOMContentLoaded', loadProjectTree);
     </script>
     
     {% block extra_js %}{% endblock %}
