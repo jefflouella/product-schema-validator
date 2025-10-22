@@ -3,12 +3,12 @@
 {% block title %}Projects - Product Schema Validator{% endblock %}
 
 {% block content %}
-<div x-data="projectsApp()">
+<div class="pt-4" x-data="projectsApp()">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h2"><i class="fas fa-folder"></i> Projects</h1>
-            <p class="text-muted">Organize your URLs by project or client</p>
+            <h1 class="h2" style="color: var(--mookee-deep-teal);"><i class="fas fa-folder" style="color: var(--mookee-deep-teal);"></i> Projects</h1>
+            <p style="color: var(--mookee-medium-gray);">Smart organization that adapts to your workflow</p>
         </div>
         <button class="btn btn-primary" @click="showCreateModal = true">
             <i class="fas fa-plus"></i> New Project
@@ -20,29 +20,49 @@
     <div class="row">
         {% for project in projects %}
         <div class="col-md-4 mb-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">{{ project.name }}</h5>
-                    <p class="card-text text-muted">{{ project.description or 'No description' }}</p>
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <span class="badge bg-primary">{{ project.url_count }} URLs</span>
+            <div class="card h-100 shadow-sm project-card">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title mb-0" style="color: var(--mookee-charcoal);">{{ project.name }}</h5>
                         <small class="text-muted">{{ project.created_date[:10] }}</small>
                     </div>
-                </div>
-                <div class="card-footer bg-white">
-                    <div class="btn-group w-100">
-                        <a href="{{ url_for('main.project_dashboard', project_id=project.id) }}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                        <a href="{{ url_for('main.urls', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-link"></i> URLs
-                        </a>
-                        <button class="btn btn-sm btn-outline-secondary" @click="editProject({{ project.id }})">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" @click="deleteProject({{ project.id }})">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
+                    <p class="card-text text-muted small mb-3" style="color: var(--mookee-medium-gray);">
+                        {{ project.description or 'No description provided' }}
+                    </p>
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge" style="background-color: var(--mookee-deep-teal); color: white;">{{ project.url_count }} URLs</span>
+                        </div>
+                        
+                        <!-- Action Buttons - Improved Layout -->
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <a href="{{ url_for('main.project_dashboard', project_id=project.id) }}" 
+                                   class="btn btn-sm w-100 btn-brand-primary">
+                                    <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{{ url_for('main.results', project_id=project.id) }}" 
+                                   class="btn btn-sm w-100 btn-brand-secondary">
+                                    <i class="fas fa-chart-bar me-1"></i> View Results
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-sm w-100 btn-outline-secondary" 
+                                        @click="editProject({{ project.id }})" 
+                                        style="border-color: var(--mookee-light-gray); color: var(--mookee-charcoal);">
+                                    <i class="fas fa-cog me-1"></i> Configure
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-sm w-100 btn-outline-danger" 
+                                        @click="deleteProject({{ project.id }})" 
+                                        style="border-color: var(--mookee-error); color: var(--mookee-error);">
+                                    <i class="fas fa-trash me-1"></i> Delete
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -52,9 +72,9 @@
     {% else %}
     <!-- No Projects State -->
     <div class="text-center py-5">
-        <i class="fas fa-folder-plus fa-5x text-muted mb-4"></i>
-        <h3 class="text-muted">No Projects Yet</h3>
-        <p class="text-muted mb-4">Create your first project to start validating schema markup</p>
+        <i class="fas fa-folder-plus fa-5x mb-4" style="color: var(--mookee-medium-gray);"></i>
+        <h3 style="color: var(--mookee-medium-gray);">No Projects Yet</h3>
+        <p style="color: var(--mookee-medium-gray);" class="mb-4">Create your first project to start validating schema markup</p>
         <button class="btn btn-primary btn-lg" @click="showCreateModal = true">
             <i class="fas fa-plus"></i> Create Your First Project
         </button>

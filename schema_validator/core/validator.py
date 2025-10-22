@@ -160,9 +160,9 @@ class SchemaValidator:
             }
         )
         
-        # Block unnecessary resources to speed up loading
+        # Block unnecessary resources to speed up loading (but allow CSS for JS execution)
         await context.route("**/*", lambda route: (
-            route.abort() if route.request.resource_type in ["image", "media", "font", "stylesheet"] 
+            route.abort() if route.request.resource_type in ["image", "media", "font"] 
             else route.continue_()
         ))
         
@@ -258,21 +258,13 @@ class SchemaValidator:
         return browser, context
     
     async def extract_schema(self, page: Page, url: str) -> Optional[Dict]:
-        """Extract Product schema from page."""
+        """Extract Product schema from page using FlareSolverr approach."""
         try:
-            # Wait for page to load completely - use 'domcontentloaded' instead of 'networkidle'
-            # 'networkidle' waits for no network activity for 500ms, which is too slow for modern sites
+            # Wait for domcontentloaded first
             await page.wait_for_load_state('domcontentloaded', timeout=self.timeout)
             
-            # Simulate human behavior with random delays
-            await page.wait_for_timeout(random.randint(1000, 3000))
-            
-            # Add some mouse movement to simulate human interaction
-            try:
-                await page.mouse.move(random.randint(100, 500), random.randint(100, 500))
-                await page.wait_for_timeout(random.randint(500, 1500))
-            except:
-                pass  # Ignore mouse movement errors
+            # Wait longer for dynamic content to load (Lumens loads schema via JS)
+            await page.wait_for_timeout(3000)
             
             # Get page content
             content = await page.content()
@@ -392,10 +384,12 @@ class SchemaValidator:
         
         try:
             # Navigate to URL
-            response = await page.goto(url, timeout=self.timeout, wait_until='networkidle')
+            response = await page.goto(url, timeout=self.timeout, wait_until='domcontentloaded')
             
+            # Check for HTTP errors first
             if response and response.status >= 400:
                 result['error'] = f"HTTP {response.status}"
+                result['status'] = f"HTTP {response.status}"
                 return result
             
             # Extract schema
@@ -408,14 +402,42 @@ class SchemaValidator:
                 # Validate schema
                 validation = self.validate_schema(schema_data)
                 result['validation'] = validation
-                result['status'] = 'success' if validation['valid'] else 'warning'
+                
+                # Enhanced status labels - show combined error/warning counts
+                if validation['valid']:
+                    if validation.get('warnings') and len(validation['warnings']) > 0:
+                        result['status'] = f"{len(validation['warnings'])} warning{'s' if len(validation['warnings']) != 1 else ''}"
+                    else:
+                        result['status'] = 'success'
+                else:
+                    # Schema found but has validation errors
+                    error_count = len(validation.get('errors', []))
+                    warning_count = len(validation.get('warnings', []))
+                    
+                    if error_count > 0 and warning_count > 0:
+                        result['status'] = f"{error_count} error{'s' if error_count != 1 else ''}, {warning_count} warning{'s' if warning_count != 1 else ''}"
+                    elif error_count > 0:
+                        result['status'] = f"{error_count} error{'s' if error_count != 1 else ''}"
+                    elif warning_count > 0:
+                        result['status'] = f"{warning_count} warning{'s' if warning_count != 1 else ''}"
+                    else:
+                        result['status'] = 'Error'
             else:
-                result['status'] = 'error'
+                # Page loaded but no schema found
+                result['status'] = 'No Schema'
                 result['error'] = 'No Product schema found'
             
         except Exception as e:
-            result['error'] = str(e)
-            result['status'] = 'error'
+            error_message = str(e)
+            result['error'] = error_message
+            
+            # Enhanced error status determination
+            if "Timeout" in error_message:
+                result['status'] = 'Blocked'
+            elif "net::ERR_" in error_message or "net::BLOCKED" in error_message:
+                result['status'] = 'Blocked'
+            else:
+                result['status'] = 'error'
         
         result['response_time'] = round(time.time() - start_time, 2)
         return result
@@ -450,7 +472,7 @@ class SchemaValidator:
                         
                         # Emit progress callback
                         if self.progress_callback:
-                            await self.progress_callback({
+                            self.progress_callback({
                                 'url': url,
                                 'result': result,
                                 'progress': processed / total_urls * 100,

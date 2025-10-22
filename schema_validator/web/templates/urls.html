@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}URLs - Schema Validator{% endblock %}
+{% block title %}URLs - Product Schema Validator{% endblock %}
 
 {% block content %}
 <div x-data="urlsApp()">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="h2"><i class="fas fa-link"></i> URLs</h1>
-            <p class="text-muted">Manage URLs for validation</p>
+            <h1 class="h2" style="color: var(--mookee-deep-teal);"><i class="fas fa-link" style="color: var(--mookee-deep-teal);"></i> URLs</h1>
+            <p style="color: var(--mookee-medium-gray);">Organize URLs the way you work</p>
         </div>
         <div>
             <button class="btn btn-outline-primary me-2" @click="showBulkAddModal = true">
@@ -54,9 +54,14 @@
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">URLs (<span x-text="filteredUrls.length"></span>)</h5>
-                <button class="btn btn-sm btn-danger" @click="bulkDelete" x-show="selectedUrls.length > 0">
-                    <i class="fas fa-trash"></i> Delete Selected (<span x-text="selectedUrls.length"></span>)
-                </button>
+                <div class="btn-group" x-show="selectedUrls.length > 0">
+                    <button class="btn btn-sm btn-warning" @click="showBulkEditModal = true">
+                        <i class="fas fa-edit"></i> Edit Selected (<span x-text="selectedUrls.length"></span>)
+                    </button>
+                    <button class="btn btn-sm btn-danger" @click="bulkDelete">
+                        <i class="fas fa-trash"></i> Delete Selected
+                    </button>
+                </div>
             </div>
         </div>
         <div class="card-body p-0">
@@ -91,13 +96,13 @@
                                 <td>
                                     <span class="badge" :class="url.status === 'active' ? 'bg-success' : 'bg-secondary'" x-text="url.status"></span>
                                 </td>
-                                <td><span x-text="url.tags || '-'" class="text-muted"></span></td>
-                                <td><small x-text="url.added_date.substring(0, 10)" class="text-muted"></small></td>
+                                <td><span x-text="url.tags || '-'" style="color: var(--mookee-medium-gray);"></span></td>
+                                <td><small x-text="url.added_date.substring(0, 10)" style="color: var(--mookee-medium-gray);"></small></td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" @click="editUrl(url)">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" @click="deleteUrl(url.id)">
+                                    <button class="btn btn-sm btn-outline-danger" @click="deleteUrl(url.id)" style="border-color: var(--mookee-error); color: var(--mookee-error);">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </td>
@@ -178,9 +183,28 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">URLs (one per line) *</label>
-                        <textarea class="form-control" x-model="bulkFormData.urls_text" rows="10" 
+                        <textarea class="form-control" x-model="bulkFormData.urls_text" rows="8" 
                                   placeholder="https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3"></textarea>
-                        <small class="text-muted">Enter one URL per line</small>
+                        <small style="color: var(--mookee-medium-gray);">Enter one URL per line</small>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" x-model="bulkFormData.status">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tags</label>
+                                <input type="text" class="form-control" x-model="bulkFormData.tags" 
+                                       placeholder="e.g. ecommerce, product-page">
+                                <small style="color: var(--mookee-medium-gray);">Comma-separated tags</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -193,7 +217,55 @@
         </div>
     </div>
     
-    <div class="modal-backdrop fade" :class="{'show': showAddModal || showBulkAddModal}" x-show="showAddModal || showBulkAddModal"></div>
+    <!-- Bulk Edit Modal -->
+    <div class="modal fade" :class="{'show d-block': showBulkEditModal}" tabindex="-1" @click.self="showBulkEditModal = false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-edit"></i> Bulk Edit URLs</h5>
+                    <button type="button" class="btn-close" @click="showBulkEditModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> You are editing <strong x-text="selectedUrls.length"></strong> selected URLs.
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" x-model="bulkEditData.status">
+                                    <option value="">Keep current status</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tags</label>
+                                <input type="text" class="form-control" x-model="bulkEditData.tags" 
+                                       placeholder="e.g. ecommerce, product-page">
+                                <small style="color: var(--mookee-medium-gray);">Comma-separated tags (will replace existing tags)</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" x-model="bulkEditData.notes" rows="3" 
+                                  placeholder="Optional notes for all selected URLs"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="showBulkEditModal = false">Cancel</button>
+                    <button type="button" class="btn btn-primary" @click="saveBulkEdit">
+                        <i class="fas fa-save"></i> Update URLs
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-backdrop fade" :class="{'show': showAddModal || showBulkAddModal || showBulkEditModal}" x-show="showAddModal || showBulkAddModal || showBulkEditModal"></div>
 </div>
 {% endblock %}
 
@@ -203,6 +275,7 @@ function urlsApp() {
     return {
         showAddModal: false,
         showBulkAddModal: false,
+        showBulkEditModal: false,
         editMode: false,
         currentUrlId: null,
         filterProject: '{{ selected_project_id or "" }}',
@@ -221,7 +294,14 @@ function urlsApp() {
         },
         bulkFormData: {
             project_id: {{ projects[0].id if projects else 'null' }},
-            urls_text: ''
+            urls_text: '',
+            status: 'active',
+            tags: ''
+        },
+        bulkEditData: {
+            status: '',
+            tags: '',
+            notes: ''
         },
         
         get allSelected() {
@@ -270,6 +350,13 @@ function urlsApp() {
                 return;
             }
             
+            // Check for duplicates on the client side
+            const existingUrls = this.urls.filter(url => url.project_id === this.formData.project_id);
+            if (existingUrls.some(url => url.url === this.formData.url.trim())) {
+                alert('This URL already exists in the selected project.');
+                return;
+            }
+            
             try {
                 const url = this.editMode 
                     ? `/api/urls/${this.currentUrlId}` 
@@ -289,8 +376,13 @@ function urlsApp() {
                 if (response.ok) {
                     this.showAddModal = false;
                     this.loadUrls();
+                    alert('URL added successfully');
                 } else {
-                    alert('Error: ' + data.error);
+                    if (response.status === 400 && data.error.includes('already exists')) {
+                        alert('Error: ' + data.error + '\n\nThis URL is already in the selected project.');
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
                 }
             } catch (error) {
                 alert('Error saving URL: ' + error.message);
@@ -305,6 +397,18 @@ function urlsApp() {
                 return;
             }
             
+            // Check for duplicates on the client side
+            const existingUrls = this.urls.filter(url => url.project_id === this.bulkFormData.project_id);
+            const existingUrlSet = new Set(existingUrls.map(url => url.url));
+            
+            const duplicates = urls.filter(url => existingUrlSet.has(url.trim()));
+            if (duplicates.length > 0) {
+                const proceed = confirm(`${duplicates.length} URLs already exist in the selected project:\n\n${duplicates.slice(0, 5).join('\n')}${duplicates.length > 5 ? '\n... and ' + (duplicates.length - 5) + ' more' : ''}\n\nDo you want to continue and skip duplicates?`);
+                if (!proceed) {
+                    return;
+                }
+            }
+            
             try {
                 const response = await fetch('/api/urls/bulk', {
                     method: 'POST',
@@ -313,7 +417,9 @@ function urlsApp() {
                     },
                     body: JSON.stringify({
                         urls: urls,
-                        project_id: this.bulkFormData.project_id
+                        project_id: this.bulkFormData.project_id,
+                        status: this.bulkFormData.status,
+                        tags: this.bulkFormData.tags
                     })
                 });
                 
@@ -322,12 +428,55 @@ function urlsApp() {
                 if (response.ok) {
                     this.showBulkAddModal = false;
                     this.loadUrls();
-                    alert(data.message);
+                    
+                    let message = data.message;
+                    if (data.duplicate_count > 0) {
+                        message += `\n\nDuplicates skipped (${data.duplicate_count}):\n${data.duplicates.slice(0, 5).join('\n')}`;
+                        if (data.duplicates.length > 5) {
+                            message += `\n... and ${data.duplicates.length - 5} more`;
+                        }
+                    }
+                    alert(message);
                 } else {
                     alert('Error: ' + data.error);
                 }
             } catch (error) {
                 alert('Error adding URLs: ' + error.message);
+            }
+        },
+        
+        async saveBulkEdit() {
+            if (this.selectedUrls.length === 0) {
+                alert('No URLs selected');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/urls/bulk-update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url_ids: this.selectedUrls,
+                        status: this.bulkEditData.status || null,
+                        tags: this.bulkEditData.tags || null,
+                        notes: this.bulkEditData.notes || null
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.showBulkEditModal = false;
+                    this.selectedUrls = [];
+                    this.loadUrls();
+                    alert(data.message);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error updating URLs: ' + error.message);
             }
         },
         
@@ -405,7 +554,19 @@ function urlsApp() {
                 if (!value) {
                     this.bulkFormData = {
                         project_id: this.projects[0]?.id || null,
-                        urls_text: ''
+                        urls_text: '',
+                        status: 'active',
+                        tags: ''
+                    };
+                }
+            });
+            
+            this.$watch('showBulkEditModal', value => {
+                if (!value) {
+                    this.bulkEditData = {
+                        status: '',
+                        tags: '',
+                        notes: ''
                     };
                 }
             });

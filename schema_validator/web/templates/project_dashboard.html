@@ -9,12 +9,12 @@
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url_for('main.projects') }}">Projects</a></li>
-                    <li class="breadcrumb-item active">{{ project.name }}</li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.projects') }}" style="color: var(--mookee-deep-teal);">Projects</a></li>
+                    <li class="breadcrumb-item active" style="color: var(--mookee-charcoal);">{{ project.name }}</li>
                 </ol>
             </nav>
-            <h1 class="h2 mb-0">{{ project.name }}</h1>
-            <p class="text-muted">{{ project.description or 'No description provided' }}</p>
+            <h1 class="h2 mb-0" style="color: var(--mookee-charcoal);">{{ project.name }}</h1>
+            <p style="color: var(--mookee-medium-gray);">{{ project.description or 'No description provided' }}</p>
         </div>
         <div class="btn-group">
             <button class="btn btn-outline-primary" @click="showSettingsModal = true">
@@ -31,32 +31,32 @@
         <div class="col-md-3">
             <div class="card stat-card">
                 <div class="card-body">
-                    <h3 class="text-primary">{{ stats.total_urls }}</h3>
-                    <p class="text-muted mb-0">Total URLs</p>
+                    <h3 style="color: var(--mookee-deep-teal);">{{ stats.total_urls }}</h3>
+                    <p style="color: var(--mookee-medium-gray);" class="mb-0">Total URLs</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card stat-card">
                 <div class="card-body">
-                    <h3 class="text-success">{{ stats.active_urls }}</h3>
-                    <p class="text-muted mb-0">Active URLs</p>
+                    <h3 style="color: var(--mookee-mint);">{{ stats.active_urls }}</h3>
+                    <p style="color: var(--mookee-medium-gray);" class="mb-0">Active URLs</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card stat-card">
                 <div class="card-body">
-                    <h3 class="text-info">{{ stats.total_runs }}</h3>
-                    <p class="text-muted mb-0">Validation Runs</p>
+                    <h3 style="color: var(--mookee-deep-teal);">{{ stats.total_runs }}</h3>
+                    <p style="color: var(--mookee-medium-gray);" class="mb-0">Validation Runs</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card stat-card">
                 <div class="card-body">
-                    <h3 class="text-warning">{{ stats.last_run_date or 'Never' }}</h3>
-                    <p class="text-muted mb-0">Last Validation</p>
+                    <h3 style="color: var(--mookee-charcoal);">{{ stats.last_run_date or 'Never' }}</h3>
+                    <p style="color: var(--mookee-medium-gray);" class="mb-0">Last Validation</p>
                 </div>
             </div>
         </div>
@@ -102,9 +102,9 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body text-center">
-                    <i class="fas fa-link fa-2x text-primary mb-3"></i>
-                    <h5>URL Management</h5>
-                    <p class="text-muted">Add, edit, or manage URLs for this project</p>
+                    <i class="fas fa-link fa-2x mb-3" style="color: var(--mookee-deep-teal);"></i>
+                    <h5 style="color: var(--mookee-charcoal);">URL Management</h5>
+                    <p style="color: var(--mookee-medium-gray);">Add, edit, or manage URLs for this project</p>
                     <a href="{{ url_for('main.urls', project_id=project.id) }}" class="btn btn-primary">
                         <i class="fas fa-link"></i> Manage URLs
                     </a>
@@ -114,9 +114,9 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body text-center">
-                    <i class="fas fa-chart-bar fa-2x text-success mb-3"></i>
-                    <h5>View Results</h5>
-                    <p class="text-muted">See validation results and download reports</p>
+                    <i class="fas fa-chart-bar fa-2x mb-3" style="color: var(--mookee-mint);"></i>
+                    <h5 style="color: var(--mookee-charcoal);">View Results</h5>
+                    <p style="color: var(--mookee-medium-gray);">See validation results and download reports</p>
                     <a href="{{ url_for('main.results', project_id=project.id) }}" class="btn btn-success">
                         <i class="fas fa-chart-bar"></i> View Results
                     </a>
@@ -126,9 +126,9 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body text-center">
-                    <i class="fas fa-cog fa-2x text-info mb-3"></i>
-                    <h5>Project Settings</h5>
-                    <p class="text-muted">Configure validation settings for this project</p>
+                    <i class="fas fa-cog fa-2x mb-3" style="color: var(--mookee-deep-teal);"></i>
+                    <h5 style="color: var(--mookee-charcoal);">Project Settings</h5>
+                    <p style="color: var(--mookee-medium-gray);">Configure validation settings for this project</p>
                     <button class="btn btn-info" @click="showSettingsModal = true">
                         <i class="fas fa-cog"></i> Configure
                     </button>
@@ -165,16 +165,19 @@
                         <tr>
                             <td><strong>#{{ run.id }}</strong></td>
                             <td>{{ run.start_time[:16] }}</td>
-                            <td>
-                                <span class="badge status-{{ run.status }}">
-                                    {{ run.status | capitalize }}
-                                </span>
-                            </td>
+                                        <td>
+                                            <span class="badge" :class="getStatusClass('{{ run.status }}')">
+                                                {{ run.status }}
+                                            </span>
+                                        </td>
                             <td>{{ run.processed_urls }} / {{ run.total_urls }}</td>
                             <td>
                                 <a href="{{ url_for('main.results', project_id=project.id, run_id=run.id) }}" class="btn btn-sm btn-outline-info">
                                     <i class="fas fa-eye"></i> View
                                 </a>
+                                <button @click="deleteRun({{ run.id }})" class="btn btn-sm btn-outline-danger ms-1" style="border-color: var(--mookee-error); color: var(--mookee-error);">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -182,7 +185,7 @@
                 </table>
             </div>
             {% else %}
-            <p class="text-muted text-center py-4">No validation runs yet for this project. Start your first validation!</p>
+            <p style="color: var(--mookee-medium-gray);" class="text-center py-4">No validation runs yet for this project. Start your first validation!</p>
             {% endif %}
         </div>
     </div>
@@ -447,6 +450,34 @@ function projectDashboardApp() {
             block_resources: true
         },
         
+        getStatusClass(status) {
+            if (!status) return 'status-error';
+            
+            // Handle combined status messages
+            if (status.toLowerCase().includes('error') && status.toLowerCase().includes('warning')) {
+                return 'status-error-warning'; // Orange for both
+            } else if (status.toLowerCase().includes('warning')) {
+                return 'status-warning'; // Yellow for warnings only
+            } else if (status.toLowerCase().includes('error')) {
+                return 'status-error'; // Red for errors only
+            } else if (status === 'success') {
+                return 'status-success';
+            } else if (status === 'No Schema') {
+                return 'status-no-schema';
+            } else if (status === 'Blocked') {
+                return 'status-blocked';
+            } else if (status.startsWith('HTTP ')) {
+                const code = status.replace('HTTP ', '');
+                if (code.startsWith('4')) {
+                    return 'status-http-4xx';
+                } else if (code.startsWith('5')) {
+                    return 'status-http-5xx';
+                }
+            }
+            
+            return 'status-error'; // Default fallback
+        },
+        
         updateSpeedPreset() {
             if (this.projectSettings.default_speed === 'conservative') {
                 this.projectSettings.concurrent_limit = 1;
@@ -674,6 +705,32 @@ function projectDashboardApp() {
                 this.isPaused = false;
                 console.log('Validation stopped:', data.message);
             });
+            
+            // Auto-refresh every 10 seconds if validation is running
+            setInterval(() => {
+                if (this.isValidating) {
+                    window.location.reload();
+                }
+            }, 10000);
+        },
+        
+        async deleteRun(runId) {
+            if (confirm('Are you sure you want to delete this validation run? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`/api/validation/runs/${runId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        // Reload the page to refresh the validation runs list
+                        window.location.reload();
+                    } else {
+                        alert('Error deleting validation run');
+                    }
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            }
         }
     }
 }

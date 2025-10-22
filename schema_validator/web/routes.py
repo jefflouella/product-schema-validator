@@ -12,6 +12,7 @@ from .app import get_db, socketio
 from .socketio_events import start_validation_task
 from ..core.validator import SchemaValidator
 from ..core.report import ReportGenerator
+from ..core.validation_help import VALIDATION_HELP
 from ..config import Config
 
 bp = Blueprint('main', __name__)
@@ -214,9 +215,17 @@ def api_add_url():
     data = request.json
     db = get_db()
     
+    url = data.get('url')
+    project_id = data.get('project_id')
+    
+    # Check for duplicate URLs in the same project
+    existing_urls = db.get_urls(project_id=project_id)
+    if any(existing_url['url'] == url for existing_url in existing_urls):
+        return jsonify({'error': 'This URL already exists in this project'}), 400
+    
     url_id = db.add_url(
-        url=data.get('url'),
-        project_id=data.get('project_id'),
+        url=url,
+        project_id=project_id,
         tags=data.get('tags', ''),
         notes=data.get('notes', '')
     )
@@ -233,13 +242,44 @@ def api_add_urls_bulk():
     urls = data.get('urls', [])
     project_id = data.get('project_id')
     
+    # Get existing URLs for duplicate checking
+    existing_urls = db.get_urls(project_id=project_id)
+    existing_url_set = {existing_url['url'] for existing_url in existing_urls}
+    
     url_ids = []
+    duplicates = []
+    added_count = 0
+    
+    status = data.get('status', 'active')
+    tags = data.get('tags', '')
+    
     for url in urls:
         if url.strip():
-            url_id = db.add_url(url.strip(), project_id=project_id)
-            url_ids.append(url_id)
+            url_clean = url.strip()
+            if url_clean in existing_url_set:
+                duplicates.append(url_clean)
+            else:
+                url_id = db.add_url(
+                    url=url_clean, 
+                    project_id=project_id,
+                    status=status,
+                    tags=tags
+                )
+                url_ids.append(url_id)
+                existing_url_set.add(url_clean)  # Add to set to prevent duplicates within the same batch
+                added_count += 1
     
-    return jsonify({'count': len(url_ids), 'message': f'{len(url_ids)} URLs added successfully'})
+    response_data = {
+        'added_count': added_count,
+        'duplicate_count': len(duplicates),
+        'message': f'{added_count} URLs added successfully'
+    }
+    
+    if duplicates:
+        response_data['duplicates'] = duplicates
+        response_data['message'] += f', {len(duplicates)} duplicates skipped'
+    
+    return jsonify(response_data)
 
 
 @bp.route('/api/urls/<int:url_id>', methods=['PUT'])
@@ -277,6 +317,37 @@ def api_bulk_delete_urls():
     db.bulk_delete_urls(url_ids)
     
     return jsonify({'count': len(url_ids), 'message': f'{len(url_ids)} URLs deleted'})
+
+
+@bp.route('/api/urls/bulk-update', methods=['POST'])
+def api_bulk_update_urls():
+    """Update multiple URLs."""
+    data = request.json
+    url_ids = data.get('url_ids', [])
+    status = data.get('status')
+    tags = data.get('tags')
+    notes = data.get('notes')
+    
+    if not url_ids:
+        return jsonify({'error': 'No URLs selected'}), 400
+    
+    db = get_db()
+    updated_count = 0
+    
+    for url_id in url_ids:
+        update_data = {}
+        if status is not None:
+            update_data['status'] = status
+        if tags is not None:
+            update_data['tags'] = tags
+        if notes is not None:
+            update_data['notes'] = notes
+        
+        if update_data:
+            db.update_url(url_id, **update_data)
+            updated_count += 1
+    
+    return jsonify({'count': updated_count, 'message': f'{updated_count} URLs updated successfully'})
 
 
 @bp.route('/api/validation/start', methods=['POST'])
@@ -340,6 +411,24 @@ def api_get_validation_run(run_id):
     
     return jsonify(run)
 
+@bp.route('/api/validation/runs/<int:run_id>/status', methods=['PUT'])
+def api_update_validation_run_status(run_id):
+    """Update validation run status."""
+    try:
+        data = request.get_json()
+        status = data.get('status')
+        
+        if not status:
+            return jsonify({'error': 'Status is required'}), 400
+            
+        db = get_db()
+        db.update_validation_run(run_id, status=status)
+        
+        return jsonify({'message': 'Status updated successfully'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @bp.route('/api/validation/results/<int:run_id>', methods=['GET'])
 def api_get_validation_results(run_id):
@@ -385,4 +474,39 @@ def api_get_settings():
         'max_retries': Config.DEFAULT_MAX_RETRIES,
         'concurrent_limit': Config.DEFAULT_CONCURRENT_LIMIT
     })
+
+
+@bp.route('/api/help/<path:error_or_warning>')
+def get_help_content(error_or_warning):
+    """Get help content for a specific error or warning type."""
+    try:
+        # Look for exact match first
+        if error_or_warning in VALIDATION_HELP:
+            return jsonify(VALIDATION_HELP[error_or_warning])
+        
+        # Try to find partial matches
+        for key, content in VALIDATION_HELP.items():
+            if error_or_warning.lower() in key.lower() or key.lower() in error_or_warning.lower():
+                return jsonify(content)
+        
+        # If no match found, return a generic help response
+        return jsonify({
+            'title': 'Help Information',
+            'description': f'This validation issue was detected: {error_or_warning}',
+            'fix': 'Please review your schema markup and ensure it follows the schema.org Product specification.',
+            'example': 'Refer to the schema.org Product documentation for proper implementation guidelines.',
+            'resources': [
+                'https://schema.org/Product',
+                'https://developers.google.com/search/docs/appearance/structured-data/product'
+            ]
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'title': 'Error',
+            'description': 'An error occurred while fetching help content.',
+            'fix': 'Please try again or contact support if the issue persists.',
+            'example': 'Check your internet connection and try refreshing the page.',
+            'resources': ['https://schema.org/Product']
+        }), 500
 

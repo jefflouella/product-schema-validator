@@ -1,0 +1,262 @@
+// Mookee Brand - SCSS Variables
+// Version 1.0
+
+// ===== PRIMARY COLORS =====
+$mookee-teal: #83ADA4;
+$mookee-deep-teal: #62837C;
+$mookee-charcoal: #48625C;
+
+// ===== SECONDARY COLORS =====
+$mookee-light-teal: #AEE9DC;
+$mookee-mint: #7AA79D;
+
+// ===== NEUTRAL COLORS =====
+$mookee-off-white: #F5F5F5;
+$mookee-light-gray: #EAEAEA;
+$mookee-medium-gray: #9B9B9B;
+$mookee-dark-gray: #32403D;
+$mookee-white: #FFFFFF;
+
+// ===== ACCENT COLORS =====
+$mookee-success: #4CAF50;
+$mookee-warning: #FF9800;
+$mookee-error: #F44336;
+$mookee-info: #2196F3;
+
+// ===== SEMANTIC COLORS =====
+$color-primary: $mookee-teal;
+$color-primary-dark: $mookee-deep-teal;
+$color-text: $mookee-charcoal;
+$color-text-secondary: $mookee-deep-teal;
+$color-text-muted: $mookee-medium-gray;
+$color-background: $mookee-off-white;
+$color-background-secondary: $mookee-light-gray;
+$color-surface: $mookee-white;
+$color-border: $mookee-light-gray;
+
+// ===== TYPOGRAPHY =====
+$font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+$font-display: 'Poppins', Arial, sans-serif;
+$font-mono: 'JetBrains Mono', 'Courier New', Courier, monospace;
+
+// Font Weights
+$font-weight-light: 300;
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Font Sizes
+$font-size-h1: 3rem;        // 48px
+$font-size-h2: 2.25rem;     // 36px
+$font-size-h3: 1.75rem;     // 28px
+$font-size-h4: 1.5rem;      // 24px
+$font-size-h5: 1.25rem;     // 20px
+$font-size-h6: 1.125rem;    // 18px
+$font-size-body-large: 1.125rem;  // 18px
+$font-size-body: 1rem;      // 16px
+$font-size-body-small: 0.875rem;  // 14px
+$font-size-caption: 0.75rem;      // 12px
+
+// Line Heights
+$line-height-heading: 1.25;
+$line-height-body: 1.6;
+$line-height-caption: 1.4;
+
+// Letter Spacing
+$letter-spacing-tight: -0.02em;
+$letter-spacing-normal: 0em;
+$letter-spacing-wide: 0.02em;
+$letter-spacing-wider: 0.08em;
+
+// ===== SPACING =====
+$space-xs: 0.25rem;   // 4px
+$space-sm: 0.5rem;    // 8px
+$space-md: 1rem;      // 16px
+$space-lg: 1.5rem;    // 24px
+$space-xl: 2rem;      // 32px
+$space-2xl: 3rem;     // 48px
+$space-3xl: 4rem;     // 64px
+
+// Spacing Map (for use with @each)
+$spacers: (
+  'xs': $space-xs,
+  'sm': $space-sm,
+  'md': $space-md,
+  'lg': $space-lg,
+  'xl': $space-xl,
+  '2xl': $space-2xl,
+  '3xl': $space-3xl
+);
+
+// ===== BORDER RADIUS =====
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-full: 9999px;
+
+// ===== SHADOWS =====
+$shadow-sm: 0 1px 2px rgba(72, 98, 92, 0.05);
+$shadow-md: 0 2px 8px rgba(72, 98, 92, 0.08);
+$shadow-lg: 0 4px 16px rgba(72, 98, 92, 0.12);
+$shadow-xl: 0 8px 32px rgba(72, 98, 92, 0.16);
+
+// ===== TRANSITIONS =====
+$transition-fast: 150ms cubic-bezier(0.4, 0.0, 0.2, 1);
+$transition-base: 250ms cubic-bezier(0.4, 0.0, 0.2, 1);
+$transition-slow: 400ms cubic-bezier(0.4, 0.0, 0.2, 1);
+
+// Easing functions
+$ease-in-out: cubic-bezier(0.4, 0.0, 0.2, 1);
+$ease-out: cubic-bezier(0.0, 0.0, 0.2, 1);
+$ease-in: cubic-bezier(0.4, 0.0, 1, 1);
+
+// ===== BREAKPOINTS =====
+$breakpoint-mobile: 320px;
+$breakpoint-tablet: 768px;
+$breakpoint-desktop: 1024px;
+$breakpoint-desktop-lg: 1440px;
+
+// Breakpoint Map
+$breakpoints: (
+  'mobile': $breakpoint-mobile,
+  'tablet': $breakpoint-tablet,
+  'desktop': $breakpoint-desktop,
+  'desktop-lg': $breakpoint-desktop-lg
+);
+
+// ===== Z-INDEX SCALE =====
+$z-base: 1;
+$z-dropdown: 100;
+$z-sticky: 200;
+$z-fixed: 300;
+$z-modal-backdrop: 400;
+$z-modal: 500;
+$z-popover: 600;
+$z-tooltip: 700;
+
+// ===== GRID =====
+$grid-columns: 12;
+$grid-gutter-desktop: 24px;
+$grid-gutter-tablet: 16px;
+$grid-gutter-mobile: 16px;
+
+$container-max-width: 1200px;
+$container-narrow-max-width: 760px;
+
+// ===== MIXINS =====
+
+// Responsive breakpoint mixin
+@mixin respond-to($breakpoint) {
+  @if map-has-key($breakpoints, $breakpoint) {
+    @media (min-width: map-get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  } @else {
+    @warn "Unknown breakpoint: #{$breakpoint}.";
+  }
+}
+
+// Typography mixin
+@mixin heading-base {
+  font-weight: $font-weight-bold;
+  line-height: $line-height-heading;
+  letter-spacing: $letter-spacing-tight;
+  color: $color-text;
+  margin-top: 0;
+  margin-bottom: $space-md;
+}
+
+// Button mixin
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  padding: $space-sm $space-lg;
+  font-family: $font-primary;
+  font-size: $font-size-body;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all $transition-base;
+  text-decoration: none;
+  border: none;
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Card mixin
+@mixin card {
+  background-color: $color-surface;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  padding: $space-lg;
+  box-shadow: $shadow-md;
+  transition: box-shadow $transition-base;
+  
+  &:hover {
+    box-shadow: $shadow-lg;
+  }
+}
+
+// Focus state mixin
+@mixin focus-outline {
+  outline: 2px solid $color-primary;
+  outline-offset: 2px;
+}
+
+// Truncate text mixin
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Visually hidden (accessible but not visible)
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// ===== EXAMPLE USAGE =====
+
+// Using variables:
+// .my-button {
+//   background-color: $mookee-teal;
+//   color: $mookee-white;
+//   padding: $space-md;
+// }
+
+// Using mixins:
+// .my-button {
+//   @include button-base;
+//   background-color: $color-primary;
+//   
+//   &:hover {
+//     background-color: $color-primary-dark;
+//   }
+// }
+
+// Using responsive mixin:
+// .my-element {
+//   width: 100%;
+//   
+//   @include respond-to('tablet') {
+//     width: 50%;
+//   }
+//   
+//   @include respond-to('desktop') {
+//     width: 33.333%;
+//   }
+// }

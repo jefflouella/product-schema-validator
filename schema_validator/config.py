@@ -3,16 +3,35 @@ Configuration settings for Schema Validator application.
 """
 
 import os
+import platform
 from pathlib import Path
 
 
 class Config:
     """Application configuration with sensible defaults."""
     
-    # Base paths
+    # Detect if running in Electron environment
+    IS_ELECTRON = os.environ.get('ELECTRON_RUN_AS_NODE') is not None or 'electron' in os.environ.get('_', '')
+    
+    # Base paths - use user data directories when in Electron
     BASE_DIR = Path(__file__).parent.parent
-    DATA_DIR = BASE_DIR / "data"
-    RESULTS_DIR = DATA_DIR / "results"
+    
+    if IS_ELECTRON:
+        # Use platform-specific user data directories for Electron
+        system = platform.system().lower()
+        if system == 'darwin':  # macOS
+            user_data_dir = Path.home() / "Library" / "Application Support" / "Schema Validator"
+        elif system == 'windows':
+            user_data_dir = Path.home() / "AppData" / "Roaming" / "Schema Validator"
+        else:  # Linux
+            user_data_dir = Path.home() / ".config" / "schema-validator"
+        
+        DATA_DIR = user_data_dir
+        RESULTS_DIR = DATA_DIR / "results"
+    else:
+        # Use local data directory for development
+        DATA_DIR = BASE_DIR / "data"
+        RESULTS_DIR = DATA_DIR / "results"
     
     # Database
     DATABASE_PATH = DATA_DIR / "validator.db"

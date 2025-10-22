@@ -1,423 +1,300 @@
-# Schema Validator - Web Interface
+# Product Schema Validator
 
-A comprehensive web-based tool for validating schema.org Product markup across multiple URLs with anti-bot bypass capabilities. Features a modern browser interface for managing URLs, running validations, and viewing results in real-time.
+A comprehensive product schema validation tool with anti-bot bypass capabilities and real-time progress tracking. This tool validates schema.org Product markup across multiple URLs with pause/resume functionality and detailed reporting.
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+**Available as both a web application and a desktop app for macOS, Windows, and Linux.**
+
+*Built by [Mookee](https://mookee.com)*
 
 ## Features
 
-### 🚀 Web Interface
-- **Modern Dashboard**: Intuitive browser-based control panel
-- **Project Management**: Organize URLs by client or website
-- **Real-time Progress**: Live updates via WebSockets during validation
-- **Results Viewer**: Interactive results with filtering and sorting
-- **Bulk Operations**: Add, edit, and delete multiple URLs at once
+- **Web Interface**: Modern Flask-based web application with real-time updates
+- **Desktop App**: Cross-platform Electron app with bundled Python runtime
+- **Anti-Bot Bypass**: Uses Playwright with advanced browser automation to bypass bot detection
+- **Batch Processing**: Validate multiple URLs simultaneously with progress tracking
+- **Pause/Resume**: Control validation processes with pause and resume functionality
+- **Real-time Updates**: WebSocket-based live progress updates
+- **Comprehensive Reporting**: Detailed validation reports in HTML, Excel, and CSV formats
+- **Schema Validation**: Validates against schema.org Product schema with required and recommended fields
+- **State Management**: Persistent validation state with database storage
+- **Auto-Updates**: Desktop app includes user-prompted update functionality
 
-### 🔒 Anti-Bot Protection
-- **Playwright Integration**: Browser automation with stealth mode
-- **User Agent Rotation**: Multiple browser fingerprints
-- **Rate Limiting**: Configurable delays to avoid detection
-- **Cookie Handling**: Session management like real browsers
+## How to Run
 
-### 📊 Validation Features
-- **Comprehensive Validation**: Full schema.org Product specification
-- **Required Fields**: name, image, offers validation
-- **Recommended Fields**: brand, SKU, ratings, reviews
-- **Scoring System**: 0-100% quality score for each URL
-- **Multiple Formats**: JSON-LD and microdata extraction
+### Prerequisites
 
-### 📈 Reporting
-- **Export Options**: CSV, JSON, Excel formats
-- **Interactive Reports**: Filter, sort, and search results
-- **Detailed Analysis**: Error and warning breakdowns
-- **Historical Data**: Track validation runs over time
+1. **Python 3.8+** installed on your system
+2. **Node.js** (for Playwright browser automation)
 
-## Installation
+### Installation
 
-### Quick Start
-
-1. **Clone the repository:**
+1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/schema-validator.git
-   cd schema-validator
+   git clone <repository-url>
+   cd schema
    ```
 
-2. **Install the package:**
+2. **Create and activate virtual environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install Python dependencies**:
    ```bash
    pip install -e .
    ```
 
-3. **Install Playwright browsers:**
+4. **Install Playwright browsers**:
    ```bash
    playwright install chromium
    ```
 
-4. **Start the web server:**
-   ```bash
-   schema-validator
-   ```
+### Running the Application
 
-5. **Open your browser:**
-   Navigate to `http://localhost:5000`
-
-That's it! You're ready to start validating schemas.
-
-### Requirements
-
-- Python 3.8 or higher
-- pip (Python package installer)
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-
-### Virtual Environment (Recommended)
-
+**Start the web server**:
 ```bash
-# Create virtual environment
-python3 -m venv venv
-
-# Activate virtual environment
-# On macOS/Linux:
-source venv/bin/activate
-# On Windows:
-venv\Scripts\activate
-
-# Install package
-pip install -e .
-playwright install chromium
+python -m schema_validator
 ```
 
-## Usage
+The application will start on `http://localhost:5000` by default.
 
-### Starting the Server
-
+**Alternative startup methods**:
 ```bash
-schema-validator
+# Using Flask directly
+flask run
+
+# With custom port
+python -m schema_validator --port 5001
 ```
 
-The server will start on `http://localhost:5000` by default.
+## Desktop App
 
-### Configuration
+The Schema Validator is also available as a desktop application for macOS, Windows, and Linux. The desktop app bundles Python and all dependencies, so users don't need to install Python separately.
 
-Set environment variables to customize:
+### Building the Desktop App
 
+**Prerequisites for building:**
+- Python 3.8+ 
+- Node.js 16+
+- Platform-specific build tools (Xcode for macOS, Visual Studio for Windows)
+
+**Quick start:**
 ```bash
-export HOST=0.0.0.0          # Listen on all interfaces
-export PORT=8080             # Custom port
-export DEBUG=true            # Enable debug mode
+# Install all dependencies
+npm run install:all
+
+# Build for current platform
+npm run build:current
+
+# Build for all platforms (requires platform-specific setup)
+npm run build:all
 ```
 
-Or use a `.env` file in the project root.
-
-### Using the Web Interface
-
-#### 1. Create a Project
-
-- Navigate to **Projects** in the sidebar
-- Click **New Project**
-- Enter project name and description
-- Projects help organize URLs by client or website
-
-#### 2. Add URLs
-
-- Navigate to **URLs** in the sidebar
-- Click **Add URL** for single URL
-- Or click **Bulk Add** to import multiple URLs (one per line)
-- Select the project and set status (active/inactive)
-
-#### 3. Start Validation
-
-- Go to **Dashboard**
-- Click **Start Validation**
-- Select project and configure settings:
-  - Headless mode (run browser in background)
-  - Concurrent limit (parallel validations)
-  - Timeout and delay settings
-- Click **Start Validation**
-
-#### 4. Monitor Progress
-
-- Real-time progress bar shows current status
-- See which URL is being processed
-- Pause, resume, or stop validation at any time
-
-#### 5. View Results
-
-- Navigate to **Results** in the sidebar
-- Select a validation run from the list
-- View summary statistics
-- Filter results by status
-- Click **Details** to see full validation report
-- Export results as CSV or JSON
-
-### Settings
-
-Configure default validation parameters in **Settings**:
-
-- **Browser Configuration**: Headless mode on/off
-- **Timeout Settings**: Page load timeout
-- **Rate Limiting**: Delay between requests
-- **Concurrency**: Number of parallel browsers
-- **Retry Settings**: Maximum retry attempts
-
-#### Recommended Presets
-
-**Conservative (Slow but Safe)**
-- Concurrent Limit: 1
-- Delay: 5-10 seconds
-- Timeout: 45 seconds
-- Best for: Sites with strict anti-bot protection
-
-**Balanced (Recommended)**
-- Concurrent Limit: 3
-- Delay: 2-5 seconds
-- Timeout: 30 seconds
-- Best for: Most websites
-
-**Aggressive (Fast but Risky)**
-- Concurrent Limit: 5-10
-- Delay: 1-2 seconds
-- Timeout: 20 seconds
-- Best for: Your own websites or testing
-
-## Validation Levels
-
-### Required Fields (Critical)
-- `name`: Product name
-- `image`: Product image(s)
-- `offers`: Pricing and availability information
-  - `price`: Product price
-  - `priceCurrency`: Currency code (e.g., USD)
-  - `availability`: Stock status
-
-### Recommended Fields (SEO)
-- `description`: Product description
-- `brand`: Product brand
-- `sku`: Stock keeping unit
-- `gtin`: Global Trade Item Number
-- `aggregateRating`: Average customer rating
-- `review`: Customer reviews
-
-## Data Storage
-
-All data is stored locally in SQLite database:
-
-- **Location**: `data/validator.db`
-- **Projects**: Organization structure
-- **URLs**: All tracked URLs
-- **Validation Runs**: Historical validation sessions
-- **Results**: Individual URL validation results
-
-### Database Schema
-
-```
-projects
-  ├── id
-  ├── name
-  ├── description
-  ├── created_date
-  └── settings_json
-
-urls
-  ├── id
-  ├── project_id (FK)
-  ├── url
-  ├── added_date
-  ├── status
-  ├── tags
-  └── notes
-
-validation_runs
-  ├── id
-  ├── project_id (FK)
-  ├── start_time
-  ├── end_time
-  ├── status
-  ├── total_urls
-  ├── processed_urls
-  └── settings_snapshot
-
-validation_results
-  ├── id
-  ├── run_id (FK)
-  ├── url_id (FK)
-  ├── status
-  ├── schema_data
-  ├── errors
-  ├── score
-  ├── validated_at
-  └── response_time
+**Development mode:**
+```bash
+# Run in development mode (uses local Python)
+npm run electron:dev
 ```
 
-## API Endpoints
+**Available build commands:**
+```bash
+# Build Python executables only
+npm run build:python
 
-The web interface uses a RESTful API:
+# Build Electron app only
+npm run electron:build
 
-### Projects
-- `GET /api/projects` - List all projects
-- `POST /api/projects` - Create project
-- `PUT /api/projects/<id>` - Update project
-- `DELETE /api/projects/<id>` - Delete project
+# Build for specific platform
+npm run electron:build:mac
+npm run electron:build:win
+npm run electron:build:linux
 
-### URLs
-- `GET /api/urls` - List URLs (with filters)
-- `POST /api/urls` - Add single URL
-- `POST /api/urls/bulk` - Add multiple URLs
-- `PUT /api/urls/<id>` - Update URL
-- `DELETE /api/urls/<id>` - Delete URL
-- `POST /api/urls/bulk-delete` - Delete multiple URLs
+# Clean build artifacts
+npm run clean
+```
 
-### Validation
-- `POST /api/validation/start` - Start validation
-- `GET /api/validation/runs` - List validation runs
-- `GET /api/validation/runs/<id>` - Get specific run
-- `GET /api/validation/results/<id>` - Get results for run
-- `GET /api/validation/results/<id>/download/<format>` - Download results
+### Desktop App Features
 
-### Settings
-- `GET /api/settings` - Get current settings
+- **No Python Installation Required**: Bundles Python runtime and all dependencies
+- **Cross-Platform**: Works on macOS, Windows, and Linux
+- **Auto-Updates**: User-prompted updates with release notes
+- **Native Integration**: Uses platform-specific user data directories
+- **Offline Capable**: Runs completely offline after installation
 
-## WebSocket Events
+### Distribution
 
-Real-time updates via Socket.IO:
+The desktop app creates platform-specific installers:
+- **macOS**: `.dmg` file (signed and notarized)
+- **Windows**: `.exe` installer with NSIS
+- **Linux**: `.AppImage` for universal compatibility
 
-**Client → Server**
-- `pause_validation` - Pause current validation
-- `resume_validation` - Resume paused validation
-- `stop_validation` - Stop current validation
-- `get_validation_state` - Get current state
+**App sizes:**
+- macOS: ~400-500 MB
+- Windows: ~350-450 MB  
+- Linux: ~400-500 MB
 
-**Server → Client**
-- `validation_progress` - Progress update with current URL
-- `validation_complete` - Validation finished
-- `validation_error` - Error occurred
-- `validation_paused` - Validation paused
-- `validation_resumed` - Validation resumed
-- `validation_stopped` - Validation stopped
+## How to Test
+
+### Running Tests
+
+**Run all tests**:
+```bash
+pytest
+```
+
+**Run specific test files**:
+```bash
+pytest tests/test_validator.py
+pytest tests/test_web.py
+```
+
+**Run with coverage**:
+```bash
+pytest --cov=schema_validator
+```
+
+### Manual Testing
+
+1. **Start the application** (see How to Run section)
+2. **Open your browser** and navigate to `http://localhost:5000`
+3. **Test the web interface**:
+   - Add URLs to validate
+   - Start validation process
+   - Test pause/resume functionality
+   - Download validation reports
+
+### Testing Validation
+
+**Test with sample URLs**:
+```bash
+# Test single URL validation
+python -c "
+from schema_validator.core.validator import ProductValidator
+validator = ProductValidator()
+result = validator.validate_url('https://example.com/product')
+print(result)
+"
+```
+
+## Project Structure
+
+```
+schema/
+├── schema_validator/           # Main package
+│   ├── core/                  # Core validation logic
+│   │   ├── validator.py       # Main validator class
+│   │   ├── schemas.py         # Schema definitions
+│   │   └── report.py          # Report generation
+│   ├── web/                   # Web interface
+│   │   ├── app.py            # Flask application
+│   │   ├── routes.py         # URL routes
+│   │   ├── database.py       # Database operations
+│   │   └── templates/        # HTML templates
+│   └── config.py             # Configuration
+├── requirements.txt           # Python dependencies
+├── package.json              # Node.js dependencies
+└── setup.py                  # Package setup
+```
+
+## Configuration
+
+The application can be configured through environment variables:
+
+- `HOST`: Server host (default: localhost)
+- `PORT`: Server port (default: 5000)
+- `DEBUG`: Debug mode (default: False)
+- `DATABASE_URL`: Database connection string
+
+## Dependencies
+
+### Python Dependencies
+- Flask 3.0+ (Web framework)
+- Flask-SocketIO 5.3+ (WebSocket support)
+- Playwright 1.40+ (Browser automation)
+- jsonschema 4.20+ (Schema validation)
+- BeautifulSoup4 4.12+ (HTML parsing)
+- openpyxl 3.1+ (Excel export)
+
+### Node.js Dependencies
+- Playwright 1.40+ (Browser automation)
 
 ## Troubleshooting
 
-### Browser Installation Issues
+### Common Issues
 
-If Playwright browsers fail to install:
+1. **Playwright browser not found**:
+   ```bash
+   playwright install chromium
+   ```
 
+2. **Port already in use**:
+   ```bash
+   python -m schema_validator --port 5001
+   ```
+
+3. **Database connection issues**:
+   - Check if the database file exists
+   - Ensure proper permissions
+
+### Debug Mode
+
+Enable debug mode for detailed logging:
 ```bash
-# Reinstall Playwright browsers
-playwright install --force chromium
+export DEBUG=True
+python -m schema_validator
 ```
 
-### Port Already in Use
+## Troubleshooting
 
-Change the port:
+### Desktop App Issues
 
+**App won't start:**
+- Check that all dependencies are installed: `npm run install:all`
+- Try running in development mode: `npm run electron:dev`
+- Check console output for Python server errors
+
+**Python server fails to start:**
+- Ensure Python executable is bundled correctly
+- Check that Playwright browsers are included
+- Verify port availability (app will find alternative ports automatically)
+
+**Build failures:**
+- Clean build artifacts: `npm run clean`
+- Reinstall dependencies: `npm run install:all`
+- Check platform-specific build requirements
+
+**Update issues:**
+- Updates are user-prompted, not automatic
+- Check GitHub releases for new versions
+- Manual download available if auto-update fails
+
+### Web App Issues
+
+**Port already in use:**
 ```bash
-PORT=8080 schema-validator
+python -m schema_validator --port 5001
 ```
 
-### Database Locked
-
-If you get "database is locked" errors:
-
-1. Ensure only one instance is running
-2. Delete `data/validator.db-journal` if it exists
-3. Restart the application
-
-### Import Errors
-
-If you get import errors:
-
+**Playwright browser not found:**
 ```bash
-# Reinstall in development mode
-pip uninstall schema-validator-web
-pip install -e .
+playwright install chromium
 ```
 
-## Development
-
-### Project Structure
-
-```
-schema-validator/
-├── schema_validator/
-│   ├── __init__.py
-│   ├── __main__.py              # Entry point
-│   ├── config.py                # Configuration
-│   ├── models.py                # Data models
-│   ├── core/
-│   │   ├── validator.py         # Validation engine
-│   │   ├── report.py            # Report generation
-│   │   └── schemas.py           # Schema definitions
-│   └── web/
-│       ├── app.py               # Flask application
-│       ├── routes.py            # API routes
-│       ├── database.py          # Database operations
-│       ├── socketio_events.py   # WebSocket handlers
-│       ├── templates/           # HTML templates
-│       └── static/              # CSS, JavaScript
-├── data/                        # SQLite database & results
-├── setup.py                     # Package installation
-├── requirements.txt             # Dependencies
-└── README.md                    # This file
-```
-
-### Running in Development Mode
-
-```bash
-# Enable debug mode
-DEBUG=true schema-validator
-```
-
-### Technology Stack
-
-- **Backend**: Flask 3.0+
-- **Database**: SQLite3
-- **Real-time**: Flask-SocketIO
-- **Browser**: Playwright (Chromium)
-- **Frontend**: Bootstrap 5, Alpine.js, HTMX
-- **Validation**: jsonschema
+**Database connection issues:**
+- Check if the database file exists
+- Ensure proper permissions
+- Try deleting `data/validator.db` to reset
 
 ## Contributing
-
-Contributions are welcome! Please:
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
 
 ## License
 
-MIT License - see LICENSE file for details.
-
-## Support
-
-For issues, questions, or contributions:
-
-- **Issues**: https://github.com/yourusername/schema-validator/issues
-- **Documentation**: https://github.com/yourusername/schema-validator
-- **Email**: support@example.com
-
-## Changelog
-
-### Version 2.0.0 (Current)
-- ✨ Complete web interface with dashboard
-- 🗂️ Project-based URL organization
-- 📊 Real-time validation progress
-- 💾 SQLite database for persistent storage
-- 🔄 Pause/resume/stop validation controls
-- 📤 Export results in CSV/JSON formats
-- 🎨 Modern responsive UI with Bootstrap 5
-
-### Version 1.0.0
-- ✅ CLI-based schema validation
-- ✅ Playwright browser automation
-- ✅ Anti-bot bypass capabilities
-- ✅ HTML report generation
-
-## Acknowledgments
-
-- Built with [Playwright](https://playwright.dev/) for browser automation
-- Powered by [Flask](https://flask.palletsprojects.com/) web framework
-- UI components from [Bootstrap](https://getbootstrap.com/)
-- Real-time updates via [Socket.IO](https://socket.io/)
+This project is licensed under the MIT License - see the LICENSE file for details.

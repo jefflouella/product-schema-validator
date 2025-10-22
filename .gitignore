@@ -48,3 +48,4 @@ Thumbs.db
 # Plans (commented out to allow tracking of important plan files)
 # *.plan.md
 
+node_modules

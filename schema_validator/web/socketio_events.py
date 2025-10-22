@@ -25,11 +25,11 @@ def start_validation_task(run_id, urls, settings):
     url_id_map = {url_obj['url']: url_obj['id'] for url_obj in urls}
     
     # Create validator with progress callback
-    async def progress_callback(data):
+    def progress_callback(data):
         """Emit progress updates via SocketIO."""
         try:
             # Update database
-            processed = data['processed']
+            processed = data['processed']  # Use processed count, not progress percentage
             db.update_validation_run(run_id, processed_urls=processed)
             
             # Save result to database
@@ -62,7 +62,7 @@ def start_validation_task(run_id, urls, settings):
                 'error': f'Progress callback error: {str(e)}'
             })
     
-    # Create validator
+    # Create original working validator
     current_validator = SchemaValidator(
         headless=settings.get('headless', True),
         timeout=settings.get('timeout', 30000),

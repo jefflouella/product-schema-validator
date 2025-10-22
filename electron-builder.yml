@@ -1,0 +1,73 @@
+appId: com.mookee.schema-validator
+productName: Schema Validator
+directories:
+  output: dist
+  buildResources: build-resources
+
+files:
+  - electron/**/*
+  - python-dist/mac/**/*
+  - python-dist/win/**/*
+  - python-dist/linux/**/*
+
+extraResources:
+  - from: python-dist/mac/
+    to: python-dist/mac/
+    filter: ["**/*"]
+  - from: python-dist/win/
+    to: python-dist/win/
+    filter: ["**/*"]
+  - from: python-dist/linux/
+    to: python-dist/linux/
+    filter: ["**/*"]
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  icon: build-resources/icon.icns
+  entitlements: build-resources/entitlements.mac.plist
+  entitlementsInherit: build-resources/entitlements.mac.plist
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  notarize: false  # Set to true when you have Apple Developer credentials
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build-resources/icon.ico
+  requestedExecutionLevel: asInvoker
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  icon: build-resources/icon.png
+  category: Development
+
+publish:
+  provider: github
+  owner: yourusername  # Replace with your GitHub username
+  repo: schema-validator
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Schema Validator
+
+dmg:
+  title: Schema Validator
+  background: build-resources/dmg-background.png
+  icon: build-resources/icon.icns
+  iconSize: 128
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

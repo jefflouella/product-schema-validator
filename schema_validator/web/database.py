@@ -81,13 +81,26 @@ class Database:
                 status TEXT DEFAULT 'pending',
                 schema_data TEXT,
                 errors TEXT,
+                warnings TEXT,
                 score REAL DEFAULT 0.0,
                 validated_at TEXT NOT NULL,
                 response_time REAL DEFAULT 0.0,
+                has_warnings BOOLEAN DEFAULT 0,
                 FOREIGN KEY (run_id) REFERENCES validation_runs (id) ON DELETE CASCADE,
                 FOREIGN KEY (url_id) REFERENCES urls (id) ON DELETE CASCADE
             )
         ''')
+        
+        # Add new fields to existing validation_results table if they don't exist
+        try:
+            cursor.execute('ALTER TABLE validation_results ADD COLUMN warnings TEXT')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        try:
+            cursor.execute('ALTER TABLE validation_results ADD COLUMN has_warnings BOOLEAN DEFAULT 0')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
         
         # Create indexes
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_urls_project ON urls(project_id)')
@@ -181,7 +194,7 @@ class Database:
         conn.close()
     
     # URL operations
-    def add_url(self, url: str, project_id: int = None, tags: str = "", notes: str = "") -> int:
+    def add_url(self, url: str, project_id: int = None, tags: str = "", notes: str = "", status: str = "active") -> int:
         """Add a new URL."""
         conn = self.get_connection()
         cursor = conn.cursor()
@@ -193,8 +206,8 @@ class Database:
         
         cursor.execute('''
             INSERT INTO urls (project_id, url, added_date, status, tags, notes)
-            VALUES (?, ?, ?, 'active', ?, ?)
-        ''', (project_id, url, datetime.now().isoformat(), tags, notes))
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (project_id, url, datetime.now().isoformat(), status, tags, notes))
         
         url_id = cursor.lastrowid
         conn.commit()
@@ -386,22 +399,24 @@ class Database:
         if result.get('error'):
             errors.append(result['error'])
         
+        # Check if result has warnings
+        has_warnings = result.get('has_warnings', False) or (len(warnings) > 0)
+        
         cursor.execute('''
             INSERT INTO validation_results 
-            (run_id, url_id, status, schema_data, errors, score, validated_at, response_time)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (run_id, url_id, status, schema_data, errors, warnings, score, validated_at, response_time, has_warnings)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             run_id,
             url_id,
             status,
             json.dumps(schema_data),
-            json.dumps({
-                'errors': errors,
-                'warnings': warnings
-            }),
+            json.dumps(errors),
+            json.dumps(warnings),
             score,
             datetime.now().isoformat(),
-            response_time
+            response_time,
+            has_warnings
         ))
         
         result_id = cursor.lastrowid
@@ -445,13 +460,41 @@ class Database:
             # Parse JSON fields
             if result_dict.get('schema_data'):
                 result_dict['schema_data'] = json.loads(result_dict['schema_data'])
+            
+            # Handle errors and warnings
+            errors = []
+            warnings = []
+            
             if result_dict.get('errors'):
-                error_data = json.loads(result_dict['errors'])
-                result_dict['validation'] = {
-                    'errors': error_data.get('errors', []),
-                    'warnings': error_data.get('warnings', []),
-                    'score': result_dict.get('score', 0.0)
-                }
+                try:
+                    errors = json.loads(result_dict['errors'])
+                except (json.JSONDecodeError, TypeError):
+                    # Handle old format where errors was a dict with errors and warnings
+                    try:
+                        error_data = json.loads(result_dict['errors'])
+                        if isinstance(error_data, dict):
+                            errors = error_data.get('errors', [])
+                            warnings = error_data.get('warnings', [])
+                        else:
+                            errors = error_data
+                    except (json.JSONDecodeError, TypeError):
+                        errors = []
+            
+            if result_dict.get('warnings'):
+                try:
+                    warnings = json.loads(result_dict['warnings'])
+                except (json.JSONDecodeError, TypeError):
+                    warnings = []
+            
+            result_dict['validation'] = {
+                'errors': errors,
+                'warnings': warnings,
+                'score': result_dict.get('score', 0.0)
+            }
+            
+            # Ensure has_warnings is a boolean
+            result_dict['has_warnings'] = bool(result_dict.get('has_warnings', False))
+            
             results.append(result_dict)
         
         return results

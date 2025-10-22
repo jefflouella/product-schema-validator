@@ -20,3 +20,6 @@ tqdm>=4.66.1
 
 # Export Formats
 openpyxl>=3.1.5
+
+# Desktop App Building
+pyinstaller>=6.3.0
